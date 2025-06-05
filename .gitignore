@@ -1,0 +1,52 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dependency directories
+jspm_packages/
+
+# VSCode settings
+.vscode/
+
+# Local env files
+.env
+.env.*.local
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Optional: Mac ._ files
+._*
+
+# Optional: coverage reports
+coverage/
+
+# Optional: IDE files
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Optional: Vite cache
+.vite/
+
+# Optional: TypeScript cache
+*.tsbuildinfo
+
+# Optional: Mac OS symbolic link files
+.AppleDouble
+
+# Optional: Windows shortcut files
+*.lnk
+
+# Optional: PWA manifest icons (if generated during build)
+*.webmanifest
