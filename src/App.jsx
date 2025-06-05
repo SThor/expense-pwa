@@ -1,9 +1,12 @@
 import { useState } from "react";
+import ToggleButton from "./components/ToggleButton";
+import { FaPiggyBank, FaUsers } from "react-icons/fa"; // Example icons
 
 export default function App() {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [target, setTarget] = useState({ ynab: true, settleup: false });
+  const [account, setAccount] = useState({ bourso: false, swile: false });
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -41,22 +44,37 @@ export default function App() {
             required
           />
           <div className="flex gap-4">
-            <label className="flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={target.ynab}
-                onChange={e => setTarget(t => ({ ...t, ynab: e.target.checked }))}
-              />
-              <span>YNAB</span>
-            </label>
-            <label className="flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={target.settleup}
-                onChange={e => setTarget(t => ({ ...t, settleup: e.target.checked }))}
-              />
-              <span>SettleUp</span>
-            </label>
+            <ToggleButton
+              active={target.ynab}
+              color="#5C6CFA"
+              label="YNAB"
+              icon="/ynab-icon.png"
+              onClick={() => setTarget(t => ({ ...t, ynab: !t.ynab }))}
+            />
+            <ToggleButton
+              active={target.settleup}
+              color="#f2774a"
+              label="SettleUp"
+              icon="/settleup-icon.png"
+              onClick={() => setTarget(t => ({ ...t, settleup: !t.settleup }))}
+            />
+            <ToggleButton
+              active={account.bourso}
+              color="#d20073"
+              label="BoursoBank"
+              icon="/boursobank-icon.png"
+              onClick={() => setAccount(a => ({ ...a, bourso: !a.bourso }))}
+            />
+            <ToggleButton
+              active={account.swile}
+              gradientColors={[
+                "#FF0080", "#7928CA", "#007AFF", "#00FFE7",
+                "#00FF94", "#FFD600", "#FF4B1F", "#FF0080"
+              ]}
+              label="Swile"
+              icon="/swile-icon.png"
+              onClick={() => setAccount(a => ({ ...a, swile: !a.swile }))}
+            />
           </div>
           <button
             className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full"
