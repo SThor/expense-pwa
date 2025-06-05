@@ -1,6 +1,6 @@
 import { useState } from "react";
+import YnabApiTestForm from './components/YnabApiTestForm';
 import ToggleButton from "./components/ToggleButton";
-import { FaPiggyBank, FaUsers } from "react-icons/fa"; // Example icons
 
 export default function App() {
   const [amount, setAmount] = useState("");
@@ -23,7 +23,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
-      <div className="bg-white shadow rounded p-8 w-full max-w-md">
+      <div className="bg-white shadow rounded p-8 w-full max-w-md mb-10">
         <h1 className="text-2xl font-bold mb-4 text-sky-700">Quick Expense Entry</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -83,6 +83,11 @@ export default function App() {
             Add Transaction
           </button>
         </form>
+      </div>
+
+      {/* YNAB API test form for development/testing */}
+      <div className="bg-white shadow rounded p-8 w-full max-w-md">
+        <YnabApiTestForm />
       </div>
     </div>
   );
