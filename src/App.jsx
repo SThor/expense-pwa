@@ -5,6 +5,8 @@ import GroupedAutocomplete from "./components/GroupedAutocomplete";
 import SuggestedCategoryPill from "./components/SuggestedCategoryPill";
 import { getAccountIdByName } from "./utils/ynabUtils";
 import { useAppContext } from "./AppContext";
+import EmojiCategoryButton from "./components/EmojiCategoryButton";
+import { getMostCommonCategoryFromTransactions } from "./utils/settleupUtils";
 
 export default function App() {
   const [amountMilliunits, setAmountMilliunits] = useState(0); // YNAB format
@@ -21,6 +23,20 @@ export default function App() {
   const [category, setCategory] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [suggestedCategoryIds, setSuggestedCategoryIds] = useState([]);
+
+  // SettleUp integration state
+  const { settleUpToken, settleUpUserId, settleUpLoading, settleUpError } =
+    useAppContext();
+  const [settleUpCategory, setSettleUpCategory] = useState("∅");
+  const [settleUpGroups, setSettleUpGroups] = useState(null);
+  const [settleUpTestGroup, setSettleUpTestGroup] = useState(null);
+  const [settleUpMembers, setSettleUpMembers] = useState([]);
+  const [settleUpPayerId, setSettleUpPayerId] = useState("");
+  const [settleUpForWhomIds, setSettleUpForWhomIds] = useState([]);
+  const [settleUpCurrency, setSettleUpCurrency] = useState("");
+  const [settleUpResult, setSettleUpResult] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useState(null);
 
   // Fetch accounts, payees, and categories dynamically when budgetId or ynabAPI changes
   useEffect(() => {
@@ -47,20 +63,22 @@ export default function App() {
       setSuggestedCategoryIds([]);
       return;
     }
-    ynabAPI.transactions.getTransactionsByPayee(budgetId, payeeId).then((res) => {
-      const transactions = res.data.transactions;
-      const counts = {};
-      transactions.forEach((tx) => {
-        if (tx.category_id) {
-          counts[tx.category_id] = (counts[tx.category_id] || 0) + 1;
-        }
+    ynabAPI.transactions
+      .getTransactionsByPayee(budgetId, payeeId)
+      .then((res) => {
+        const transactions = res.data.transactions;
+        const counts = {};
+        transactions.forEach((tx) => {
+          if (tx.category_id) {
+            counts[tx.category_id] = (counts[tx.category_id] || 0) + 1;
+          }
+        });
+        const sorted = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([catId]) => catId);
+        setSuggestedCategoryIds(sorted);
       });
-      const sorted = Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([catId]) => catId);
-      setSuggestedCategoryIds(sorted);
-    });
   }, [ynabAPI, payeeId, budgetId]);
 
   // Memoized grouped payees for autocomplete (sorted, simple alpha)
@@ -91,6 +109,196 @@ export default function App() {
     setCategoryId(item && item.value ? item.value : "");
   };
 
+  // Fetch SettleUp groups on mount if token/userId available
+  useEffect(() => {
+    if (!settleUpLoading && !settleUpError && settleUpToken && settleUpUserId) {
+      setSettleUpResult("Loading groups...");
+      fetch(
+        `https://settle-up-sandbox.firebaseio.com/userGroups/${settleUpUserId}.json?auth=${settleUpToken}`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setSettleUpGroups(data || {});
+          setSettleUpResult("");
+        })
+        .catch((err) =>
+          setSettleUpResult("Error fetching groups: " + err.message)
+        );
+    }
+  }, [settleUpLoading, settleUpError, settleUpToken, settleUpUserId]);
+
+  // Find test group or fallback to first group
+  useEffect(() => {
+    if (!settleUpGroups || !settleUpToken || !settleUpUserId) return;
+    const groupIds = Object.keys(settleUpGroups);
+    (async () => {
+      let found = null;
+      for (const groupId of groupIds) {
+        const res = await fetch(
+          `https://settle-up-sandbox.firebaseio.com/groups/${groupId}.json?auth=${settleUpToken}`
+        );
+        const data = await res.json();
+        if (
+          data &&
+          data.name &&
+          data.name.trim().toLowerCase() === "test group"
+        ) {
+          found = { groupId, ...data };
+          break;
+        }
+      }
+      if (!found && groupIds.length > 0) {
+        const groupId = groupIds[0];
+        const res = await fetch(
+          `https://settle-up-sandbox.firebaseio.com/groups/${groupId}.json?auth=${settleUpToken}`
+        );
+        const data = await res.json();
+        found = { groupId, ...data };
+        setSettleUpResult(
+          "No group named 'test group' found. Using your first group instead."
+        );
+      } else {
+        setSettleUpResult(found ? "" : "No group named 'test group' found.");
+      }
+      setSettleUpTestGroup(found);
+    })();
+  }, [settleUpGroups, settleUpToken, settleUpUserId]);
+
+  // Fetch members when testGroup changes
+  useEffect(() => {
+    if (!settleUpTestGroup || !settleUpTestGroup.groupId || !settleUpToken)
+      return;
+    fetch(
+      `https://settle-up-sandbox.firebaseio.com/members/${settleUpTestGroup.groupId}.json?auth=${settleUpToken}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (data) {
+          const arr = Object.entries(data).map(([id, m]) => ({ id, ...m }));
+          setSettleUpMembers(arr);
+          setSettleUpForWhomIds(
+            arr.filter((m) => m.active !== false).map((m) => m.id)
+          );
+          setSettleUpPayerId(arr[0]?.id || "");
+        }
+      });
+    setSettleUpCurrency(settleUpTestGroup?.convertedToCurrency || "EUR");
+  }, [settleUpTestGroup, settleUpToken]);
+
+  // Autofill SettleUp category (emoji) based on previous transactions with same payee/description
+  useEffect(() => {
+    if (!payee || !settleUpTestGroup?.groupId || !settleUpToken) return;
+    // Debounce: only fetch after user stops typing for 500ms
+    const handler = setTimeout(async () => {
+      try {
+        const url = `https://settle-up-sandbox.firebaseio.com/transactions/${settleUpTestGroup.groupId}.json?auth=${settleUpToken}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data) return;
+        const transactions = Object.values(data);
+        // Use shared utility with 'contains' match
+        const mostCommon = getMostCommonCategoryFromTransactions(transactions, payee, 'purpose', 'contains');
+        if (mostCommon) {
+          setSettleUpCategory(mostCommon);
+        }
+      } catch (e) {
+        // ignore autofill errors
+      }
+    }, 500);
+    return () => clearTimeout(handler);
+    // eslint-disable-next-line
+  }, [payee, settleUpTestGroup?.groupId, settleUpToken]);
+
+  // --- YNAB transaction submit logic ---
+  async function handleYnabSubmit() {
+    if (!ynabAPI || !budgetId) return;
+    let accountId = null;
+    if (account.bourso)
+      accountId = getAccountIdByName(accounts, "Boursorama");
+    else if (account.swile) accountId = getAccountIdByName(accounts, "Swile");
+    else accountId = getAccountIdByName(accounts, "Boursorama"); // fallback
+    if (!accountId) {
+      alert("No matching YNAB account found for the selected button.");
+      return;
+    }
+    const transaction = {
+      account_id: accountId,
+      date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
+      amount: amountMilliunits, // already in milliunits
+      payee_id: payeeId || null,
+      payee_name: !payeeId ? payee : undefined,
+      category_id: categoryId,
+      memo: description,
+      approved: true,
+    };
+    try {
+      console.log('[YNAB] Request:', transaction);
+      const res = await ynabAPI.transactions.createTransaction(budgetId, { transaction });
+      console.log('[YNAB] Response:', res);
+      // Optionally show a success message or update UI
+      setSettleUpResult('✅ YNAB transaction sent!');
+      setAmountMilliunits(0);
+      setDescription("");
+    } catch (err) {
+      console.error('[YNAB] API error:', err);
+      setSettleUpResult('YNAB API error: ' + (err?.message || err));
+    }
+  }
+
+  // --- SettleUp transaction submit logic ---
+  async function handleSettleUpSubmit() {
+    setSettleUpResult("");
+    if (
+      !settleUpToken ||
+      !settleUpTestGroup?.groupId ||
+      amountMilliunits === 0 ||
+      !settleUpPayerId ||
+      settleUpForWhomIds.length === 0
+    ) {
+      setSettleUpResult("❌ Please fill all required fields before submitting.");
+      return;
+    }
+    const amount = (-amountMilliunits / 1000).toFixed(2);
+    const now = Date.now();
+    const tx = {
+      category: settleUpCategory === "∅" ? "" : settleUpCategory,
+      currencyCode: settleUpCurrency || "EUR",
+      dateTime: now,
+      items: [
+        {
+          amount: amount,
+          forWhom: settleUpForWhomIds.map((id) => ({ memberId: id, weight: "1" })),
+        },
+      ],
+      purpose: payee + (description ? ` - ${description}` : ""),
+      type: "expense",
+      whoPaid: [{ memberId: settleUpPayerId, weight: "1" }],
+      fixedExchangeRate: false,
+      exchangeRates: undefined,
+      receiptUrl: undefined,
+    };
+    try {
+      const url = `https://settle-up-sandbox.firebaseio.com/transactions/${settleUpTestGroup.groupId}.json?auth=${settleUpToken}`;
+      console.log('[SettleUp] Request:', tx);
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tx),
+      });
+      const data = await res.json();
+      console.log('[SettleUp] Response:', data);
+      if (data && data.name) {
+        setSettleUpResult("✅ SettleUp transaction sent!");
+        setAmountMilliunits(0);
+        setDescription("");
+      } else {
+        setSettleUpResult("Error adding transaction: " + JSON.stringify(data));
+      }
+    } catch (e) {
+      setSettleUpResult("Error adding transaction: " + e.message);
+    }
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     // Format for display (for alert only)
@@ -104,40 +312,12 @@ export default function App() {
         .filter(Boolean)
         .join(", ")}`
     );
-    // --- YNAB API integration example ---
-    if (target.ynab && ynabAPI && budgetId) {
-      // Dynamically select accountId based on toggles and fetched accounts
-      let accountId = null;
-      if (account.bourso) accountId = getAccountIdByName(accounts, "Boursorama");
-      else if (account.swile) accountId = getAccountIdByName(accounts, "Swile");
-      else accountId = getAccountIdByName(accounts, "Boursorama"); // fallback
-      if (!accountId) {
-        alert("No matching YNAB account found for the selected button.");
-        return;
-      }
-      const transaction = {
-        account_id: accountId,
-        date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
-        amount: amountMilliunits, // already in milliunits
-        payee_id: payeeId || null,
-        payee_name: !payeeId ? payee : undefined,
-        category_id: categoryId,
-        memo: description,
-        cleared: "cleared",
-        approved: true,
-      };
-      ynabAPI.transactions
-        .createTransaction(budgetId, { transaction })
-        .then(() => {
-          // Optionally show a success message or update UI
-          console.log("Transaction added to YNAB");
-        })
-        .catch((err) => {
-          // Handle error
-          console.error("YNAB API error:", err);
-        });
+    if (target.ynab) {
+      handleYnabSubmit();
     }
-    // TODO: Add logic to call SettleUp API here, using amountMilliunits
+    if (target.settleup) {
+      handleSettleUpSubmit();
+    }
   }
 
   return (
@@ -192,25 +372,33 @@ export default function App() {
               onClick={() => setAccount((a) => ({ ...a, swile: !a.swile }))}
             />
           </div>
-          <GroupedAutocomplete
-            value={payee}
-            onChange={handlePayeeChange}
-            groupedItems={groupedPayees}
-            placeholder="Payee"
-            onCreate={(val) => {
-              setPayee(val);
-              setPayeeId("");
-            }}
-          />
+          <div className="flex items-center gap-2">
+            {/* Emoji picker always visible */}
+            <EmojiCategoryButton value={settleUpCategory} onChange={setSettleUpCategory} />
+            <GroupedAutocomplete
+              value={payee}
+              onChange={handlePayeeChange}
+              groupedItems={groupedPayees}
+              placeholder="Payee"
+              onCreate={(val) => {
+                setPayee(val);
+                setPayeeId("");
+              }}
+            />
+          </div>
           {suggestedCategoryIds.length > 0 && (
             <div>
-              <div className="text-sm text-gray-600 mb-2 font-semibold">Suggested categories:</div>
+              <div className="text-sm text-gray-600 mb-2 font-semibold">
+                Suggested categories:
+              </div>
               <div className="flex flex-wrap gap-2 mb-1">
                 {suggestedCategoryIds
                   .map((catId) => {
                     const cat = categories.find((c) => c.id === catId);
                     if (!cat) return null;
-                    const group = categoryGroups.find((g) => g.categories.some((c) => c.id === catId));
+                    const group = categoryGroups.find((g) =>
+                      g.categories.some((c) => c.id === catId)
+                    );
                     return (
                       <SuggestedCategoryPill
                         key={catId}
@@ -241,6 +429,17 @@ export default function App() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+          {/* SettleUp payer/forWhom selection if needed in future */}
+          {settleUpResult && (
+            <div
+              className="text-sm mt-2"
+              style={{
+                color: settleUpResult.startsWith("✅") ? "green" : "red",
+              }}
+            >
+              {settleUpResult}
+            </div>
+          )}
           <button
             className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full"
             type="submit"

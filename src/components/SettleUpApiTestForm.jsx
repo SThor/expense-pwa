@@ -4,6 +4,8 @@ import AmountInput from "./AmountInput";
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
 import { MdArrowDropDown } from "react-icons/md";
+import EmojiCategoryButton from "./EmojiCategoryButton";
+import { getMostCommonCategoryFromTransactions } from "../utils/settleupUtils";
 
 export default function SettleUpApiTestForm({ result, setResult }) {
   const {
@@ -234,7 +236,7 @@ export default function SettleUpApiTestForm({ result, setResult }) {
       return;
     }
     // Convert milliunits to string amount (e.g. 1234 -> "1.23")
-    const amount = (Math.abs(amountMilliunits) / 1000).toFixed(2);
+    const amount = (-amountMilliunits / 1000).toFixed(2);
     const now = Date.now();
     const tx = {
       category: category === "∅" ? "" : category,
@@ -287,7 +289,6 @@ export default function SettleUpApiTestForm({ result, setResult }) {
   // Autofill category based on previous transactions with same description
   useEffect(() => {
     if (!desc || !testGroup?.groupId || !token) return;
-    // Reset autofill state
     setAutofillLoading(true);
     setAutofilledCategory("");
     // Debounce: only fetch after user stops typing for 500ms
@@ -300,30 +301,13 @@ export default function SettleUpApiTestForm({ result, setResult }) {
           setAutofillLoading(false);
           return;
         }
-        // data is an object: { txId: { ...tx }, ... }
         const transactions = Object.values(data);
-        // Filter by matching purpose (case-insensitive, trimmed)
-        const descNorm = desc.trim().toLowerCase();
-        const matches = transactions.filter(tx =>
-          tx.purpose && tx.purpose.trim().toLowerCase() === descNorm && tx.category && tx.category.trim() !== ""
-        );
-        if (matches.length === 0) {
-          setAutofillLoading(false);
-          return;
-        }
-        // Count categories
-        const counts = {};
-        matches.forEach(tx => {
-          const cat = tx.category.trim();
-          if (cat) counts[cat] = (counts[cat] || 0) + 1;
-        });
-        // Find most common
-        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-        if (sorted.length > 0) {
-          setAutofilledCategory(sorted[0][0]);
-          // Only autofill if user hasn't changed category since last desc change
+        // Use shared utility with 'contains' match
+        const mostCommon = getMostCommonCategoryFromTransactions(transactions, desc, 'purpose', 'contains');
+        if (mostCommon) {
+          setAutofilledCategory(mostCommon);
           if (!userChangedCategory.current) {
-            setCategory(sorted[0][0]);
+            setCategory(mostCommon);
           }
         }
         setAutofillLoading(false);
@@ -362,34 +346,7 @@ export default function SettleUpApiTestForm({ result, setResult }) {
             <h3 className="text-md font-bold text-sky-700 mb-1">Add Transaction to Group</h3>
             <AmountInput value={amountMilliunits} onChange={setAmountMilliunits} />
             <div className="flex items-center gap-2">
-              <div className="relative" style={{ width: "fit-content" }}>
-                <button
-                  type="button"
-                  className="flex items-center justify-center border rounded bg-white shadow-sm hover:bg-blue-50 focus:ring-2 focus:ring-blue-200 transition"
-                  onClick={() => setShowEmojiPicker(v => !v)}
-                  aria-label="Pick emoji category"
-                  style={{
-                    width: 50,
-                    height: 40,
-                    padding: 2,
-                  }}
-                >
-                  <span style={{ fontSize: "1.35em", display: "flex", verticalAlign: "middle", height: "100%", width: "100%" }}>{category}</span>
-                  <MdArrowDropDown className="text-gray-400" size={24}/>
-                </button>
-                {showEmojiPicker && (
-                  <div
-                    ref={emojiPickerRef}
-                    className="absolute z-30 bg-white border rounded shadow-lg mt-1 animate-fade-in"
-                    style={{ minWidth: 180, maxWidth: 220 }}
-                  >
-                    <Picker data={data} onEmojiSelect={e => {
-                      setCategory(e.native || e.id || e.colons || "");
-                      setShowEmojiPicker(false);
-                    }} theme="light" />
-                  </div>
-                )}
-              </div>
+              <EmojiCategoryButton value={category} onChange={setCategory} />
               <input
                 className="input input-bordered w-full px-3 py-2 border rounded"
                 type="text"
