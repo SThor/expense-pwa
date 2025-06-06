@@ -5,7 +5,7 @@ import GroupedAutocomplete from "./GroupedAutocomplete";
 const BASE_URL = "https://api.ynab.com/v1";
 const token = import.meta.env.VITE_YNAB_TOKEN;
 
-export default function YnabApiTestForm() {
+export default function YnabApiTestForm({ result, setResult }) {
   const [budgets, setBudgets] = useState([]);
   const [budgetId, setBudgetId] = useState(() => localStorage.getItem("ynab_budget_id") || "");
   const [accounts, setAccounts] = useState([]);
@@ -19,7 +19,6 @@ export default function YnabApiTestForm() {
   const [categoryId, setCategoryId] = useState(""); // selected category id
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
-  const [result, setResult] = useState("");
   const [suggestedCategoryIds, setSuggestedCategoryIds] = useState([]);
 
   // Fetch budgets on mount
@@ -31,6 +30,12 @@ export default function YnabApiTestForm() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setBudgets(res.data.data.budgets);
+        setResult(
+          <div>
+            <div className="text-green-700 font-semibold">Fetched budgets</div>
+            <pre className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-40">{JSON.stringify(res.data, null, 2)}</pre>
+          </div>
+        );
         if (!budgetId) {
           const found = res.data.data.budgets.find(b => b.name === "Starting anew");
           if (found) {
@@ -63,6 +68,17 @@ export default function YnabApiTestForm() {
         setCategoryGroups(allGroups);
         const allCats = allGroups.flatMap(g => g.categories);
         setCategories(allCats);
+        setResult(
+          <div>
+            <div className="text-green-700 font-semibold">Fetched accounts, payees, and categories</div>
+            <div className="text-xs text-gray-500">Accounts:</div>
+            <pre className="bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-32">{JSON.stringify(accountsRes.data, null, 2)}</pre>
+            <div className="text-xs text-gray-500 mt-2">Payees:</div>
+            <pre className="bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-32">{JSON.stringify(payeesRes.data, null, 2)}</pre>
+            <div className="text-xs text-gray-500 mt-2">Categories:</div>
+            <pre className="bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-32">{JSON.stringify(catRes.data, null, 2)}</pre>
+          </div>
+        );
       } catch (e) {
         setResult("Error fetching accounts/payees/categories: " + e.message);
       }
@@ -93,8 +109,15 @@ export default function YnabApiTestForm() {
           .slice(0, 3)
           .map(([catId]) => catId);
         setSuggestedCategoryIds(sorted);
-      } catch {
+        setResult(
+          <div>
+            <div className="text-green-700 font-semibold">Fetched payee transactions</div>
+            <pre className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-40">{JSON.stringify(res.data, null, 2)}</pre>
+          </div>
+        );
+      } catch (e) {
         setSuggestedCategoryIds([]);
+        setResult("Error fetching payee transactions: " + e.message);
       }
     }
     fetchPayeeTrans();
@@ -154,6 +177,11 @@ export default function YnabApiTestForm() {
   async function handleSubmit(e) {
     e.preventDefault();
     setResult("");
+    // Validation debug
+    if (!accountId || !amount || (!payee && !payeeId) || !categoryId) {
+      setResult("❌ Please fill all required fields before submitting.");
+      return;
+    }
     try {
       const transaction = {
         account_id: accountId,
@@ -166,14 +194,22 @@ export default function YnabApiTestForm() {
         cleared: "cleared",
         approved: true,
       };
-      await axios.post(
+      const response = await axios.post(
         `${BASE_URL}/budgets/${budgetId}/transactions`,
         { transaction },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setResult("✅ Transaction sent!");
+      setResult(
+        <div>
+          <div className="flex items-center gap-2 text-green-700 font-semibold">
+            <span>✅ Transaction sent!</span>
+            <span className="text-xs text-gray-500">(ID: {response.data.data.transaction.id})</span>
+          </div>
+          <pre className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-40">{JSON.stringify(response.data, null, 2)}</pre>
+        </div>
+      );
       setAmount("");
       setDesc("");
       setPayee("");
@@ -182,102 +218,122 @@ export default function YnabApiTestForm() {
       setCategoryId("");
       setSuggestedCategoryIds([]);
     } catch (e) {
-      setResult("Error adding transaction: " + (e.response?.data?.error?.detail || e.message));
+      let errorMsg = "Error adding transaction: ";
+      if (e.response) {
+        errorMsg += e.response.data?.error?.detail || e.response.statusText;
+        errorMsg += ` (HTTP ${e.response.status})`;
+      } else if (e.request) {
+        errorMsg += "No response from server. Network or CORS error.";
+      } else {
+        errorMsg += e.message;
+      }
+      setResult(errorMsg);
     }
   }
 
+  // Show result below the form for debug/UX clarity
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-4"
-      autoComplete="off"
-    >
-      <h2 className="text-xl font-bold mb-2 text-sky-700">YNAB API Test Form</h2>
-      <select
-        className="input input-bordered w-full px-3 py-2 border rounded"
-        value={budgetId}
-        onChange={e => {
-          setBudgetId(e.target.value);
-          localStorage.setItem("ynab_budget_id", e.target.value);
-        }}
-        required
+    <>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4"
+        autoComplete="off"
       >
-        <option value="">Select Budget</option>
-        {budgets.map(b => (
-          <option key={b.id} value={b.id}>{b.name}</option>
-        ))}
-      </select>
-      <select
-        className="input input-bordered w-full px-3 py-2 border rounded"
-        value={accountId}
-        onChange={e => setAccountId(e.target.value)}
-        required
-      >
-        <option value="">Select Account</option>
-        {accounts.map(a => (
-          <option key={a.id} value={a.id}>{a.name}</option>
-        ))}
-      </select>
-      <GroupedAutocomplete
-        value={payee}
-        onChange={handlePayeeChange}
-        groupedItems={groupedPayees}
-        placeholder="Payee"
-        onCreate={val => {
-          setPayee(val);
-          setPayeeId("");
-        }}
-      />
-      {suggestedCategoryIds.length > 0 && (
-        <div>
-          <div className="text-xs text-gray-500 mb-1">Suggested categories:</div>
-          <div className="flex flex-wrap gap-2 mb-1">
-            {suggestedCategoryIds.map(catId => (
-              <button
-                key={catId}
-                type="button"
-                onClick={() => {
+        <h2 className="text-xl font-bold mb-2 text-sky-700">YNAB API Test Form</h2>
+        <select
+          className="input input-bordered w-full px-3 py-2 border rounded"
+          value={budgetId}
+          onChange={e => {
+            setBudgetId(e.target.value);
+            localStorage.setItem("ynab_budget_id", e.target.value);
+          }}
+          required
+        >
+          <option value="">Select Budget</option>
+          {budgets.map(b => (
+            <option key={b.id} value={b.id}>{b.name}</option>
+          ))}
+        </select>
+        <select
+          className="input input-bordered w-full px-3 py-2 border rounded"
+          value={accountId}
+          onChange={e => setAccountId(e.target.value)}
+          required
+        >
+          <option value="">Select Account</option>
+          {accounts.map(a => (
+            <option key={a.id} value={a.id}>{a.name}</option>
+          ))}
+        </select>
+        <GroupedAutocomplete
+          value={payee}
+          onChange={handlePayeeChange}
+          groupedItems={groupedPayees}
+          placeholder="Payee"
+          onCreate={val => {
+            setPayee(val);
+            setPayeeId("");
+          }}
+        />
+        {suggestedCategoryIds.length > 0 && (
+          <div>
+            <div className="text-sm text-gray-600 mb-2 font-semibold">Suggested categories:</div>
+            <div className="flex flex-wrap gap-2 mb-1">
+              {suggestedCategoryIds
+                .map(catId => {
                   const cat = categories.find(c => c.id === catId);
-                  setCategory(cat ? cat.name : "");
-                  setCategoryId(catId);
-                }}
-                className={`px-2 py-1 rounded text-xs border ${categoryId === catId ? "bg-blue-200 border-blue-500" : "bg-gray-100 border-gray-300"}`}
-              >
-                {catName(catId)}
-              </button>
-            ))}
+                  if (!cat) return null; // Filter out not found
+                  const group = categoryGroups.find(g => g.categories.some(c => c.id === catId));
+                  return (
+                    <button
+                      key={catId}
+                      type="button"
+                      onClick={() => {
+                        setCategory(cat.name);
+                        setCategoryId(catId);
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-[1rem] font-medium border flex items-center gap-2 transition-colors duration-150 ${categoryId === catId ? "bg-blue-200 border-blue-500 text-blue-900" : "bg-gray-100 border-gray-300 text-gray-800"}`}
+                      style={{ cursor: "pointer", minHeight: 36 }}
+                    >
+                      <span className="text-gray-600">{group ? group.name : "?"}</span>
+                      <span className="mx-1">&gt;</span>
+                      <span className="font-semibold">{cat.name}</span>
+                    </button>
+                  );
+                })
+                .filter(Boolean)}
+            </div>
           </div>
-        </div>
-      )}
-      <GroupedAutocomplete
-        value={category}
-        onChange={handleCategoryChange}
-        groupedItems={groupedCategories}
-        placeholder="Category"
-      />
-      <input
-        className="input input-bordered w-full px-3 py-2 border rounded"
-        type="number"
-        placeholder="Amount (e.g. 12.34)"
-        value={amount}
-        onChange={e => setAmount(e.target.value)}
-        required
-      />
-      <input
-        className="input input-bordered w-full px-3 py-2 border rounded"
-        type="text"
-        placeholder="Description"
-        value={desc}
-        onChange={e => setDesc(e.target.value)}
-      />
-      <button
-        className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full"
-        type="submit"
-        disabled={!accountId || !amount || (!payee && !payeeId) || !categoryId}
-      >
-        Add Transaction
-      </button>
-      {result && <div className="mt-2 text-sm">{result}</div>}
-    </form>
+        )}
+        <GroupedAutocomplete
+          value={category}
+          onChange={handleCategoryChange}
+          groupedItems={groupedCategories}
+          placeholder="Category"
+        />
+        <input
+          className="input input-bordered w-full px-3 py-2 border rounded"
+          type="number"
+          placeholder="Amount (e.g. 12.34)"
+          value={amount}
+          onChange={e => setAmount(e.target.value)}
+          required
+        />
+        <input
+          className="input input-bordered w-full px-3 py-2 border rounded"
+          type="text"
+          placeholder="Description"
+          value={desc}
+          onChange={e => setDesc(e.target.value)}
+        />
+        <button
+          className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full"
+          type="submit"
+          disabled={!accountId || !amount || (!payee && !payeeId) || !categoryId}
+        >
+          Add Transaction
+        </button>
+      </form>
+    </>
   );
 }
