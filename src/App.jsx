@@ -1,23 +1,27 @@
 import { useState } from "react";
 import ToggleButton from "./components/ToggleButton";
+import AmountInput from "./components/AmountInput";
 
 export default function App() {
-  const [amount, setAmount] = useState("");
+  const [amountMilliunits, setAmountMilliunits] = useState(0); // YNAB format
   const [description, setDescription] = useState("");
   const [target, setTarget] = useState({ ynab: true, settleup: false });
   const [account, setAccount] = useState({ bourso: false, swile: false });
 
   function handleSubmit(e) {
     e.preventDefault();
+    // Format for display (for alert only)
+    const sign = amountMilliunits < 0 ? "-" : "+";
+    const absMilli = Math.abs(amountMilliunits);
     alert(
-      `Would submit: $${amount} "${description}" to: ${[
+      `Would submit: ${sign}${absMilli} milli€ "${description}" to: ${[
         target.ynab && "YNAB",
-        target.settleup && "SettleUp"
+        target.settleup && "SettleUp",
       ]
         .filter(Boolean)
         .join(", ")}`
     );
-    // TODO: Add logic to call YNAB & SettleUp APIs here
+    // TODO: Add logic to call YNAB & SettleUp APIs here, using amountMilliunits
   }
 
   return (
@@ -27,14 +31,9 @@ export default function App() {
           Quick Expense Entry
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            className="input input-bordered w-full px-3 py-2 border rounded"
-            type="number"
-            step="0.01"
-            placeholder="Amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            required
+          <AmountInput
+            value={amountMilliunits}
+            onChange={setAmountMilliunits}
           />
           <input
             className="input input-bordered w-full px-3 py-2 border rounded"
