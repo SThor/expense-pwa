@@ -1,12 +1,14 @@
 import { useState } from "react";
 import ToggleButton from "./components/ToggleButton";
 import AmountInput from "./components/AmountInput";
+import { useYnab } from "./YnabContext";
 
 export default function App() {
   const [amountMilliunits, setAmountMilliunits] = useState(0); // YNAB format
   const [description, setDescription] = useState("");
   const [target, setTarget] = useState({ ynab: true, settleup: false });
   const [account, setAccount] = useState({ bourso: false, swile: false });
+  const { ynabAPI, budgetId } = useYnab();
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -21,7 +23,34 @@ export default function App() {
         .filter(Boolean)
         .join(", ")}`
     );
-    // TODO: Add logic to call YNAB & SettleUp APIs here, using amountMilliunits
+    // --- YNAB API integration example ---
+    if (target.ynab && ynabAPI && budgetId) {
+      // Select accountId based on Bourso/Swile toggles
+      let accountId = null;
+      if (account.bourso) accountId = "<YOUR_BOURSO_ACCOUNT_ID>";
+      else if (account.swile) accountId = "<YOUR_SWILE_ACCOUNT_ID>";
+      else accountId = "<DEFAULT_ACCOUNT_ID>"; // fallback or prompt user
+      const transaction = {
+        account_id: accountId,
+        date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
+        amount: amountMilliunits, // already in milliunits
+        payee_name: description,
+        memo: description,
+        cleared: "cleared",
+        approved: true,
+      };
+      ynabAPI.transactions
+        .createTransaction(budgetId, { transaction })
+        .then(() => {
+          // Optionally show a success message or update UI
+          console.log("Transaction added to YNAB");
+        })
+        .catch((err) => {
+          // Handle error
+          console.error("YNAB API error:", err);
+        });
+    }
+    // TODO: Add logic to call SettleUp API here, using amountMilliunits
   }
 
   return (
