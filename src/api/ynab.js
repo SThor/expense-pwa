@@ -23,3 +23,30 @@ export function createTransaction(token, budgetId, transaction) {
     }
   );
 }
+
+export function getPayees(token, budgetId) {
+  return axios.get(`${BASE_URL}/budgets/${budgetId}/payees`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function getCategories(token, budgetId) {
+  return axios.get(`${BASE_URL}/budgets/${budgetId}/categories`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function getPayeeTransactions(token, budgetId, payeeId) {
+  return axios.get(
+    `${BASE_URL}/budgets/${budgetId}/payees/${payeeId}/transactions`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+}
+
+export function getPayeeLocations(token, budgetId) {
+  return axios.get(`${BASE_URL}/budgets/${budgetId}/payee_locations`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}

@@ -1,11 +1,21 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import GroupedAutocomplete from "./GroupedAutocomplete";
+import SuggestedCategoryPill from "./SuggestedCategoryPill";
+import { getClosestLocation } from "../utils/locationUtils";
+import {
+  getBudgets,
+  getAccounts,
+  getPayees,
+  getCategories,
+  getPayeeTransactions,
+  getPayeeLocations,
+  createTransaction
+} from "../api/ynab";
+import { useGeolocation } from "../hooks/useGeolocation";
 
-const BASE_URL = "https://api.ynab.com/v1";
 const token = import.meta.env.VITE_YNAB_TOKEN;
 
-export default function YnabApiTestForm({ result, setResult }) {
+export default function YnabApiTestForm({ setResult }) {
   const [budgets, setBudgets] = useState([]);
   const [budgetId, setBudgetId] = useState(() => localStorage.getItem("ynab_budget_id") || "");
   const [accounts, setAccounts] = useState([]);
@@ -21,16 +31,14 @@ export default function YnabApiTestForm({ result, setResult }) {
   const [desc, setDesc] = useState("");
   const [suggestedCategoryIds, setSuggestedCategoryIds] = useState([]);
   const [payeeLocations, setPayeeLocations] = useState([]);
-  const [userPosition, setUserPosition] = useState(null);
+  const userPosition = useGeolocation();
 
   // Fetch budgets on mount
   useEffect(() => {
     async function fetchBudgets() {
       setResult("");
       try {
-        const res = await axios.get(`${BASE_URL}/budgets`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await getBudgets(token);
         setBudgets(res.data.data.budgets);
         setResult(
           <div>
@@ -60,9 +68,9 @@ export default function YnabApiTestForm({ result, setResult }) {
       setResult("");
       try {
         const [accountsRes, payeesRes, catRes] = await Promise.all([
-          axios.get(`${BASE_URL}/budgets/${budgetId}/accounts`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${BASE_URL}/budgets/${budgetId}/payees`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${BASE_URL}/budgets/${budgetId}/categories`, { headers: { Authorization: `Bearer ${token}` } }),
+          getAccounts(token, budgetId),
+          getPayees(token, budgetId),
+          getCategories(token, budgetId),
         ]);
         setAccounts(accountsRes.data.data.accounts);
         setPayees(payeesRes.data.data.payees);
@@ -96,9 +104,7 @@ export default function YnabApiTestForm({ result, setResult }) {
     }
     async function fetchPayeeTrans() {
       try {
-        const res = await axios.get(`${BASE_URL}/budgets/${budgetId}/payees/${payeeId}/transactions`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await getPayeeTransactions(token, budgetId, payeeId);
         const transactions = res.data.data.transactions;
         const counts = {};
         transactions.forEach(tx => {
@@ -130,9 +136,7 @@ export default function YnabApiTestForm({ result, setResult }) {
     if (!budgetId || payees.length === 0) return;
     async function fetchLocations() {
       try {
-        const res = await axios.get(`${BASE_URL}/budgets/${budgetId}/payee_locations`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await getPayeeLocations(token, budgetId);
         setPayeeLocations(res.data.data.payee_locations);
       } catch (e) {
         // Ignore location errors for now
@@ -140,41 +144,6 @@ export default function YnabApiTestForm({ result, setResult }) {
     }
     fetchLocations();
   }, [budgetId, payees.length]);
-
-  // Get user geolocation (ask once)
-  useEffect(() => {
-    if (userPosition !== null) return;
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      pos => setUserPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setUserPosition(null),
-      { enableHighAccuracy: true, timeout: 5000 }
-    );
-  }, [userPosition]);
-
-  // Helper: distance between two lat/lng points (Haversine)
-  function haversine(lat1, lng1, lat2, lng2) {
-    function toRad(x) { return (x * Math.PI) / 180; }
-    const R = 6371e3; // meters
-    const dLat = toRad(lat2 - lat1);
-    const dLng = toRad(lng2 - lng1);
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }
-
-  // Helper: get closest location for a payee
-  function getClosestLocation(payeeId) {
-    if (!userPosition) return null;
-    const locs = payeeLocations.filter(l => l.payee_id === payeeId && l.latitude && l.longitude);
-    if (locs.length === 0) return null;
-    let minDist = Infinity, closest = null;
-    for (const loc of locs) {
-      const dist = haversine(userPosition.lat, userPosition.lng, loc.latitude, loc.longitude);
-      if (dist < minDist) { minDist = dist; closest = loc; }
-    }
-    return closest ? { ...closest, distance: minDist } : null;
-  }
 
   // Sort payees: by proximity, then last tx date, then alpha
   function sortPayees(payeeList) {
@@ -193,8 +162,8 @@ export default function YnabApiTestForm({ result, setResult }) {
     });
   }
 
-  // Prepare grouped payees for autocomplete (sorted)
-  const groupedPayees = [
+  // Memoized grouped payees for autocomplete (sorted)
+  const groupedPayees = useMemo(() => [
     {
       label: "Saved Payees",
       items: sortPayees(payees.filter(p => !p.transfer_account_id)).map(p => ({
@@ -209,33 +178,36 @@ export default function YnabApiTestForm({ result, setResult }) {
         label: p.name,
       })),
     }
-  ];
+  ], [payees, userPosition, payeeLocations]);
 
-  // Prepare grouped categories for autocomplete
-  const groupedCategories = categoryGroups
-    .filter(g => g.categories && g.categories.length > 0)
-    .map(group => ({
-      label: group.name,
-      items: group.categories
-        .filter(cat => !cat.deleted && !cat.hidden) // Only active categories
-        .map(cat => ({
-          value: cat.id,
-          label: cat.name,
-        })),
-    }))
-    .filter(group => group.items.length > 0);
+  // Memoized grouped categories for autocomplete
+  const groupedCategories = useMemo(() =>
+    categoryGroups
+      .filter(g => g.categories && g.categories.length > 0)
+      .map(group => ({
+        label: group.name,
+        items: group.categories
+          .filter(cat => !cat.deleted && !cat.hidden)
+          .map(cat => ({
+            value: cat.id,
+            label: cat.name,
+          })),
+      }))
+      .filter(group => group.items.length > 0),
+    [categoryGroups]
+  );
 
-  // When payee is selected from autocomplete, set both payee and payeeId
-  function handlePayeeChange(val, item) {
+  // Memoized: When payee is selected from autocomplete, set both payee and payeeId
+  const handlePayeeChange = useCallback((val, item) => {
     setPayee(val);
     setPayeeId(item && item.value ? item.value : "");
-  }
+  }, []);
 
-  // When category is selected from autocomplete, set both category (name) and categoryId
-  function handleCategoryChange(val, item) {
+  // Memoized: When category is selected from autocomplete, set both category (name) and categoryId
+  const handleCategoryChange = useCallback((val, item) => {
     setCategory(val);
     setCategoryId(item && item.value ? item.value : "");
-  }
+  }, []);
 
   // Submit
   async function handleSubmit(e) {
@@ -258,13 +230,7 @@ export default function YnabApiTestForm({ result, setResult }) {
         cleared: "cleared",
         approved: true,
       };
-      const response = await axios.post(
-        `${BASE_URL}/budgets/${budgetId}/transactions`,
-        { transaction },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await createTransaction(token, budgetId, transaction);
       setResult(
         <div>
           <div className="flex items-center gap-2 text-green-700 font-semibold">
@@ -349,20 +315,16 @@ export default function YnabApiTestForm({ result, setResult }) {
                   if (!cat) return null; // Filter out not found
                   const group = categoryGroups.find(g => g.categories.some(c => c.id === catId));
                   return (
-                    <button
+                    <SuggestedCategoryPill
                       key={catId}
-                      type="button"
+                      cat={cat}
+                      group={group}
+                      selected={categoryId === catId}
                       onClick={() => {
                         setCategory(cat.name);
                         setCategoryId(catId);
                       }}
-                      className={`px-3 py-1.5 rounded-full text-[1rem] font-medium border flex items-center gap-2 transition-colors duration-150 ${categoryId === catId ? "bg-blue-200 border-blue-500 text-blue-900" : "bg-gray-100 border-gray-300 text-gray-800"}`}
-                      style={{ cursor: "pointer", minHeight: 36 }}
-                    >
-                      <span className="text-gray-600">{group ? group.name : "?"}</span>
-                      <span className="mx-1">&gt;</span>
-                      <span className="font-semibold">{cat.name}</span>
-                    </button>
+                    />
                   );
                 })
                 .filter(Boolean)}
