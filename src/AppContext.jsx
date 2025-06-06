@@ -27,10 +27,9 @@ export function AppProvider({ children }) {
       setSettleUpLoading(true);
       setSettleUpError("");
       try {
-        const t = await getSettleUpTokenFromEnv();
-        setSettleUpToken(t);
-        const payload = JSON.parse(atob(t.split(".")[1]));
-        setSettleUpUserId(payload.sub);
+        const { token, userId } = await getSettleUpTokenFromEnv();
+        setSettleUpToken(token);
+        setSettleUpUserId(userId);
       } catch (err) {
         setSettleUpError("Settle Up token error: " + err.message);
       } finally {

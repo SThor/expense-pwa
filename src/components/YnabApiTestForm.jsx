@@ -34,16 +34,16 @@ export default function YnabApiTestForm({ setResult }) {
   useEffect(() => {
     if (!ynabAPI) return;
     async function fetchBudgets() {
-      setResult("");
+      //setResult("");
       try {
         const res = await ynabAPI.budgets.getBudgets();
         setBudgets(res.data.budgets);
-        setResult(
-          <div>
-            <div className="text-green-700 font-semibold">Fetched budgets</div>
-            <pre className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-40">{JSON.stringify(res.data, null, 2)}</pre>
-          </div>
-        );
+        // setResult(
+        //   <div>
+        //     <div className="text-green-700 font-semibold">Fetched budgets</div>
+        //     <pre className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-40">{JSON.stringify(res.data, null, 2)}</pre>
+        //   </div>
+        // );
         if (!budgetId) {
           const found = res.data.budgets.find(b => b.name === "Starting anew");
           if (found) {
@@ -63,7 +63,7 @@ export default function YnabApiTestForm({ setResult }) {
   useEffect(() => {
     if (!ynabAPI || !budgetId) return;
     async function fetchAll() {
-      setResult("");
+      //setResult("");
       try {
         const [accountsRes, payeesRes, catRes] = await Promise.all([
           ynabAPI.accounts.getAccounts(budgetId),
@@ -76,17 +76,17 @@ export default function YnabApiTestForm({ setResult }) {
         setCategoryGroups(allGroups);
         const allCats = allGroups.flatMap(g => g.categories);
         setCategories(allCats);
-        setResult(
-          <div>
-            <div className="text-green-700 font-semibold">Fetched accounts, payees, and categories</div>
-            <div className="text-xs text-gray-500">Accounts:</div>
-            <pre className="bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-32">{JSON.stringify(accountsRes.data, null, 2)}</pre>
-            <div className="text-xs text-gray-500 mt-2">Payees:</div>
-            <pre className="bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-32">{JSON.stringify(payeesRes.data, null, 2)}</pre>
-            <div className="text-xs text-gray-500 mt-2">Categories:</div>
-            <pre className="bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-32">{JSON.stringify(catRes.data, null, 2)}</pre>
-          </div>
-        );
+        // setResult(
+        //   <div>
+        //     <div className="text-green-700 font-semibold">Fetched accounts, payees, and categories</div>
+        //     <div className="text-xs text-gray-500">Accounts:</div>
+        //     <pre className="bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-32">{JSON.stringify(accountsRes.data, null, 2)}</pre>
+        //     <div className="text-xs text-gray-500 mt-2">Payees:</div>
+        //     <pre className="bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-32">{JSON.stringify(payeesRes.data, null, 2)}</pre>
+        //     <div className="text-xs text-gray-500 mt-2">Categories:</div>
+        //     <pre className="bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-32">{JSON.stringify(catRes.data, null, 2)}</pre>
+        //   </div>
+        // );
       } catch (e) {
         setResult("Error fetching accounts/payees/categories: " + (e.message || e.toString()));
       }
@@ -116,12 +116,12 @@ export default function YnabApiTestForm({ setResult }) {
           .slice(0, 3)
           .map(([catId]) => catId);
         setSuggestedCategoryIds(sorted);
-        setResult(
-          <div>
-            <div className="text-green-700 font-semibold">Fetched payee transactions</div>
-            <pre className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-40">{JSON.stringify(res.data, null, 2)}</pre>
-          </div>
-        );
+        // setResult(
+        //   <div>
+        //     <div className="text-green-700 font-semibold">Fetched payee transactions</div>
+        //     <pre className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-40">{JSON.stringify(res.data, null, 2)}</pre>
+        //   </div>
+        // );
       } catch (e) {
         setSuggestedCategoryIds([]);
         setResult("Error fetching payee transactions: " + (e.message || e.toString()));
@@ -211,7 +211,7 @@ export default function YnabApiTestForm({ setResult }) {
   // Submit
   async function handleSubmit(e) {
     e.preventDefault();
-    setResult("");
+    // setResult("");
     if (!ynabAPI) {
       setResult("YNAB API not initialized.");
       return;
