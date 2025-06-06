@@ -3,15 +3,15 @@ import ToggleButton from "./components/ToggleButton";
 import AmountInput from "./components/AmountInput";
 import GroupedAutocomplete from "./components/GroupedAutocomplete";
 import SuggestedCategoryPill from "./components/SuggestedCategoryPill";
-import { useYnab } from "./YnabContext";
 import { getAccountIdByName } from "./utils/ynabUtils";
+import { useAppContext } from "./AppContext";
 
 export default function App() {
   const [amountMilliunits, setAmountMilliunits] = useState(0); // YNAB format
   const [description, setDescription] = useState("");
   const [target, setTarget] = useState({ ynab: true, settleup: false });
   const [account, setAccount] = useState({ bourso: false, swile: false });
-  const { ynabAPI, budgetId } = useYnab();
+  const { ynabAPI, budgetId } = useAppContext();
   const [accounts, setAccounts] = useState([]);
   const [payees, setPayees] = useState([]);
   const [categories, setCategories] = useState([]);

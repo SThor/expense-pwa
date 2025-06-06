@@ -1,7 +1,8 @@
 import { useState } from "react";
 import App from "./App";
 import YnabApiTestForm from './components/YnabApiTestForm';
-import { YnabProvider } from "./YnabContext";
+import SettleUpApiTestForm from './components/SettleUpApiTestForm';
+import { AppProvider } from "./AppContext";
 
 export default function DevApp() {
   const [showAppOnly, setShowAppOnly] = useState(false);
@@ -19,7 +20,7 @@ export default function DevApp() {
   }
 
   return (
-    <YnabProvider>
+    <AppProvider>
       <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
         <div className="flex flex-row w-full max-w-7xl gap-12 px-4 items-stretch h-[calc(100vh-4rem)] mt-8 mb-4">
           {/* App column */}
@@ -33,6 +34,9 @@ export default function DevApp() {
                 Show App only
               </button>
               <YnabApiTestForm result={apiResult} setResult={setApiResult} />
+              <div className="border-t my-6"></div>
+              <h2 className="text-lg font-bold mb-2 text-sky-700">Settle Up API Test</h2>
+              <SettleUpApiTestForm result={apiResult} setResult={setApiResult} />
             </div>
           </div>
           {/* API Result column */}
@@ -46,6 +50,6 @@ export default function DevApp() {
           </div>
         </div>
       </div>
-    </YnabProvider>
+    </AppProvider>
   );
 }

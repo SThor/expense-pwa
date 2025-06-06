@@ -3,13 +3,18 @@ import GroupedAutocomplete from "./GroupedAutocomplete";
 import SuggestedCategoryPill from "./SuggestedCategoryPill";
 import { getClosestLocation } from "../utils/ynabUtils";
 import { useGeolocation } from "../hooks/useGeolocation";
-import { useYnab } from "../YnabContext";
+import { useAppContext } from "../AppContext";
 import AmountInput from "./AmountInput";
 
 export default function YnabApiTestForm({ setResult }) {
-  const { ynabAPI, token, budgetId: contextBudgetId, setBudgetId: setContextBudgetId } = useYnab();
+  const {
+    ynabAPI,
+    ynabToken: token,
+    setYnabToken: setToken,
+    budgetId,
+    setBudgetId,
+  } = useAppContext();
   const [budgets, setBudgets] = useState([]);
-  const [budgetId, setBudgetId] = useState(() => contextBudgetId || localStorage.getItem("ynab_budget_id") || "");
   const [accounts, setAccounts] = useState([]);
   const [accountId, setAccountId] = useState("");
   const [payee, setPayee] = useState(""); // free text or payee name
@@ -24,11 +29,6 @@ export default function YnabApiTestForm({ setResult }) {
   const [suggestedCategoryIds, setSuggestedCategoryIds] = useState([]);
   const [payeeLocations, setPayeeLocations] = useState([]);
   const userPosition = useGeolocation();
-
-  // Keep context and local budgetId in sync
-  useEffect(() => {
-    if (budgetId && budgetId !== contextBudgetId) setContextBudgetId(budgetId);
-  }, [budgetId, contextBudgetId, setContextBudgetId]);
 
   // Fetch budgets on mount
   useEffect(() => {
@@ -48,7 +48,6 @@ export default function YnabApiTestForm({ setResult }) {
           const found = res.data.budgets.find(b => b.name === "Starting anew");
           if (found) {
             setBudgetId(found.id);
-            setContextBudgetId(found.id);
             localStorage.setItem("ynab_budget_id", found.id);
           }
         }
