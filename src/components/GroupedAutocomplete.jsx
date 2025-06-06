@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MdAddCircle, MdArrowDropDown  } from "react-icons/md";
+import { MdAddCircle, MdArrowDropDown, MdClear } from "react-icons/md";
 
-export default function GroupedAutocomplete({
+function GroupedAutocomplete({
   value,
   onChange,
   groupedItems,
@@ -13,12 +13,14 @@ export default function GroupedAutocomplete({
   const [highlighted, setHighlighted] = useState({ groupIdx: 0, itemIdx: 0 });
   const inputRef = useRef();
   const dropdownRef = useRef();
+  const userFocusRef = useRef(false);
+  const userInputRef = useRef(false);
+  const justClearedRef = useRef(false);
 
   useEffect(() => {
     setInput(value || "");
   }, [value]);
 
-  // Close dropdown if clicking outside
   useEffect(() => {
     function handleClick(e) {
       if (
@@ -52,14 +54,13 @@ export default function GroupedAutocomplete({
     )
     .flat();
 
-  // Handle select
   const handleSelect = item => {
     setInput(item.label);
     onChange && onChange(item.label, item);
     setOpen(false);
+    userInputRef.current = false;
   };
 
-  // Keyboard navigation
   function handleKeyDown(e) {
     if (!open && (e.key === "ArrowDown" || e.key === "Enter")) {
       setOpen(true);
@@ -92,14 +93,45 @@ export default function GroupedAutocomplete({
     }
   }
 
-  useEffect(() => {
-    if (input !== "") setOpen(true);
-  }, [input]);
-
-  // Blur closes dropdown
-  function handleBlur(e) {
+  function handleBlur() {
     setTimeout(() => setOpen(false), 120);
   }
+
+  // Only track user focus for suppressOpen logic
+  useEffect(() => {
+    const setUserFocus = () => { userFocusRef.current = true; };
+    const input = inputRef.current;
+    if (input) {
+      input.addEventListener('mousedown', setUserFocus);
+      input.addEventListener('touchstart', setUserFocus);
+      input.addEventListener('keydown', setUserFocus);
+    }
+    return () => {
+      if (input) {
+        input.removeEventListener('mousedown', setUserFocus);
+        input.removeEventListener('touchstart', setUserFocus);
+        input.removeEventListener('keydown', setUserFocus);
+      }
+    };
+  }, []);
+
+  const handleInputChange = e => {
+    setInput(e.target.value);
+    onChange && onChange(e.target.value, null);
+    setOpen(true);
+    userInputRef.current = true;
+  };
+
+  useEffect(() => {
+    if (justClearedRef.current) {
+      justClearedRef.current = false;
+      return;
+    }
+    if (!userInputRef.current) {
+      setOpen(false);
+    }
+    userInputRef.current = false;
+  }, [input]);
 
   return (
     <div className="relative w-full" style={{ fontFamily: "inherit" }}>
@@ -108,22 +140,38 @@ export default function GroupedAutocomplete({
           ref={inputRef}
           className="border w-full rounded py-2 px-3 pr-8 text-base shadow-sm focus:ring-2 focus:ring-blue-200 outline-none transition"
           value={input}
-          onChange={e => {
-            setInput(e.target.value);
-            onChange && onChange(e.target.value, null);
+          onChange={handleInputChange}
+          onFocus={() => {
             setOpen(true);
+            userFocusRef.current = false;
           }}
-          onFocus={() => setOpen(true)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoComplete="off"
         />
-        {/* Arrow icon */}
         <MdArrowDropDown
           className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
           size={24}
         />
+        {input && (
+          <button
+            type="button"
+            className="absolute right-9 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 focus:outline-none"
+            style={{ background: "none", border: "none", padding: 0, margin: 0, cursor: "pointer" }}
+            tabIndex={-1}
+            onClick={() => {
+              setInput("");
+              onChange && onChange("", null);
+              setOpen(true);
+              justClearedRef.current = true;
+              setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 0);
+            }}
+            aria-label="Clear"
+          >
+            <MdClear size={20} />
+          </button>
+        )}
       </div>
       {open && (
         <div
@@ -190,3 +238,5 @@ export default function GroupedAutocomplete({
     </div>
   );
 }
+
+export default GroupedAutocomplete;
