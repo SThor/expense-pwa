@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import GroupedAutocomplete from "./GroupedAutocomplete";
 import SuggestedCategoryPill from "./SuggestedCategoryPill";
-import { getClosestLocation } from "../utils/locationUtils";
+import { getClosestLocation } from "../utils/ynabUtils";
 import { useGeolocation } from "../hooks/useGeolocation";
 import { useYnab } from "../YnabContext";
 import AmountInput from "./AmountInput";

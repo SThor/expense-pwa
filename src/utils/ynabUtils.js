@@ -23,3 +23,11 @@ export function getClosestLocation(payeeId, payeeLocations, userPosition) {
   }
   return closest ? { ...closest, distance: minDist } : null;
 }
+
+// Utility: Get account ID by (partial) name, case-insensitive, not closed
+export function getAccountIdByName(accounts, name) {
+  const acc = accounts.find(
+    (a) => a.name.toLowerCase().includes(name.toLowerCase()) && !a.closed
+  );
+  return acc ? acc.id : null;
+}

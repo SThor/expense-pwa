@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ToggleButton from "./components/ToggleButton";
 import AmountInput from "./components/AmountInput";
+import GroupedAutocomplete from "./components/GroupedAutocomplete";
+import SuggestedCategoryPill from "./components/SuggestedCategoryPill";
 import { useYnab } from "./YnabContext";
+import { getAccountIdByName } from "./utils/ynabUtils";
 
 export default function App() {
   const [amountMilliunits, setAmountMilliunits] = useState(0); // YNAB format
@@ -9,6 +12,84 @@ export default function App() {
   const [target, setTarget] = useState({ ynab: true, settleup: false });
   const [account, setAccount] = useState({ bourso: false, swile: false });
   const { ynabAPI, budgetId } = useYnab();
+  const [accounts, setAccounts] = useState([]);
+  const [payees, setPayees] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoryGroups, setCategoryGroups] = useState([]);
+  const [payee, setPayee] = useState("");
+  const [payeeId, setPayeeId] = useState("");
+  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [suggestedCategoryIds, setSuggestedCategoryIds] = useState([]);
+
+  // Fetch accounts, payees, and categories dynamically when budgetId or ynabAPI changes
+  useEffect(() => {
+    if (!ynabAPI || !budgetId) return;
+    // Fetch accounts
+    ynabAPI.accounts.getAccounts(budgetId).then((res) => {
+      setAccounts(res.data.accounts);
+    });
+    // Fetch payees and categories
+    Promise.all([
+      ynabAPI.payees.getPayees(budgetId),
+      ynabAPI.categories.getCategories(budgetId),
+    ]).then(([payeesRes, catRes]) => {
+      setPayees(payeesRes.data.payees);
+      const allGroups = catRes.data.category_groups;
+      setCategoryGroups(allGroups);
+      setCategories(allGroups.flatMap((g) => g.categories));
+    });
+  }, [ynabAPI, budgetId]);
+
+  // When payeeId changes, fetch their transactions and suggest categories
+  useEffect(() => {
+    if (!ynabAPI || !payeeId || !budgetId) {
+      setSuggestedCategoryIds([]);
+      return;
+    }
+    ynabAPI.transactions.getTransactionsByPayee(budgetId, payeeId).then((res) => {
+      const transactions = res.data.transactions;
+      const counts = {};
+      transactions.forEach((tx) => {
+        if (tx.category_id) {
+          counts[tx.category_id] = (counts[tx.category_id] || 0) + 1;
+        }
+      });
+      const sorted = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([catId]) => catId);
+      setSuggestedCategoryIds(sorted);
+    });
+  }, [ynabAPI, payeeId, budgetId]);
+
+  // Memoized grouped payees for autocomplete (sorted, simple alpha)
+  const groupedPayees = [
+    {
+      label: "Payees",
+      items: payees.map((p) => ({ value: p.id, label: p.name })),
+    },
+  ];
+  // Memoized grouped categories for autocomplete
+  const groupedCategories = categoryGroups
+    .filter((g) => g.categories && g.categories.length > 0)
+    .map((group) => ({
+      label: group.name,
+      items: group.categories
+        .filter((cat) => !cat.deleted && !cat.hidden)
+        .map((cat) => ({ value: cat.id, label: cat.name })),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  // Handlers for payee/category selection
+  const handlePayeeChange = (val, item) => {
+    setPayee(val);
+    setPayeeId(item && item.value ? item.value : "");
+  };
+  const handleCategoryChange = (val, item) => {
+    setCategory(val);
+    setCategoryId(item && item.value ? item.value : "");
+  };
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -25,16 +106,22 @@ export default function App() {
     );
     // --- YNAB API integration example ---
     if (target.ynab && ynabAPI && budgetId) {
-      // Select accountId based on Bourso/Swile toggles
+      // Dynamically select accountId based on toggles and fetched accounts
       let accountId = null;
-      if (account.bourso) accountId = "<YOUR_BOURSO_ACCOUNT_ID>";
-      else if (account.swile) accountId = "<YOUR_SWILE_ACCOUNT_ID>";
-      else accountId = "<DEFAULT_ACCOUNT_ID>"; // fallback or prompt user
+      if (account.bourso) accountId = getAccountIdByName(accounts, "Boursorama");
+      else if (account.swile) accountId = getAccountIdByName(accounts, "Swile");
+      else accountId = getAccountIdByName(accounts, "Boursorama"); // fallback
+      if (!accountId) {
+        alert("No matching YNAB account found for the selected button.");
+        return;
+      }
       const transaction = {
         account_id: accountId,
         date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
         amount: amountMilliunits, // already in milliunits
-        payee_name: description,
+        payee_id: payeeId || null,
+        payee_name: !payeeId ? payee : undefined,
+        category_id: categoryId,
         memo: description,
         cleared: "cleared",
         approved: true,
@@ -63,14 +150,6 @@ export default function App() {
           <AmountInput
             value={amountMilliunits}
             onChange={setAmountMilliunits}
-          />
-          <input
-            className="input input-bordered w-full px-3 py-2 border rounded"
-            type="text"
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
           />
           <div className="flex gap-4">
             <ToggleButton
@@ -113,6 +192,55 @@ export default function App() {
               onClick={() => setAccount((a) => ({ ...a, swile: !a.swile }))}
             />
           </div>
+          <GroupedAutocomplete
+            value={payee}
+            onChange={handlePayeeChange}
+            groupedItems={groupedPayees}
+            placeholder="Payee"
+            onCreate={(val) => {
+              setPayee(val);
+              setPayeeId("");
+            }}
+          />
+          {suggestedCategoryIds.length > 0 && (
+            <div>
+              <div className="text-sm text-gray-600 mb-2 font-semibold">Suggested categories:</div>
+              <div className="flex flex-wrap gap-2 mb-1">
+                {suggestedCategoryIds
+                  .map((catId) => {
+                    const cat = categories.find((c) => c.id === catId);
+                    if (!cat) return null;
+                    const group = categoryGroups.find((g) => g.categories.some((c) => c.id === catId));
+                    return (
+                      <SuggestedCategoryPill
+                        key={catId}
+                        cat={cat}
+                        group={group}
+                        selected={categoryId === catId}
+                        onClick={() => {
+                          setCategory(cat.name);
+                          setCategoryId(catId);
+                        }}
+                      />
+                    );
+                  })
+                  .filter(Boolean)}
+              </div>
+            </div>
+          )}
+          <GroupedAutocomplete
+            value={category}
+            onChange={handleCategoryChange}
+            groupedItems={groupedCategories}
+            placeholder="Category"
+          />
+          <input
+            className="input input-bordered w-full px-3 py-2 border rounded"
+            type="text"
+            placeholder="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
           <button
             className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full"
             type="submit"
