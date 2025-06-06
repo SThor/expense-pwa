@@ -20,6 +20,8 @@ export default function YnabApiTestForm({ result, setResult }) {
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
   const [suggestedCategoryIds, setSuggestedCategoryIds] = useState([]);
+  const [payeeLocations, setPayeeLocations] = useState([]);
+  const [userPosition, setUserPosition] = useState(null);
 
   // Fetch budgets on mount
   useEffect(() => {
@@ -123,24 +125,86 @@ export default function YnabApiTestForm({ result, setResult }) {
     fetchPayeeTrans();
   }, [payeeId, budgetId]);
 
-  // Helper for category name lookup
-  function catName(id) {
-    const cat = categories.find(c => c.id === id);
-    return cat ? cat.name : id;
+  // Fetch payee locations after payees are loaded
+  useEffect(() => {
+    if (!budgetId || payees.length === 0) return;
+    async function fetchLocations() {
+      try {
+        const res = await axios.get(`${BASE_URL}/budgets/${budgetId}/payee_locations`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setPayeeLocations(res.data.data.payee_locations);
+      } catch (e) {
+        // Ignore location errors for now
+      }
+    }
+    fetchLocations();
+  }, [budgetId, payees.length]);
+
+  // Get user geolocation (ask once)
+  useEffect(() => {
+    if (userPosition !== null) return;
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      pos => setUserPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => setUserPosition(null),
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  }, [userPosition]);
+
+  // Helper: distance between two lat/lng points (Haversine)
+  function haversine(lat1, lng1, lat2, lng2) {
+    function toRad(x) { return (x * Math.PI) / 180; }
+    const R = 6371e3; // meters
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   }
 
-  // Prepare grouped payees for autocomplete
+  // Helper: get closest location for a payee
+  function getClosestLocation(payeeId) {
+    if (!userPosition) return null;
+    const locs = payeeLocations.filter(l => l.payee_id === payeeId && l.latitude && l.longitude);
+    if (locs.length === 0) return null;
+    let minDist = Infinity, closest = null;
+    for (const loc of locs) {
+      const dist = haversine(userPosition.lat, userPosition.lng, loc.latitude, loc.longitude);
+      if (dist < minDist) { minDist = dist; closest = loc; }
+    }
+    return closest ? { ...closest, distance: minDist } : null;
+  }
+
+  // Sort payees: by proximity, then last tx date, then alpha
+  function sortPayees(payeeList) {
+    return [...payeeList].sort((a, b) => {
+      // 1. Proximity
+      const locA = getClosestLocation(a.id);
+      const locB = getClosestLocation(b.id);
+      if (userPosition && locA && locB) {
+        if (locA.distance !== locB.distance) return locA.distance - locB.distance;
+      } else if (userPosition && (locA || locB)) {
+        return locA ? -1 : 1;
+      }
+      // 2. Last transaction date (not implemented, fallback to alpha)
+      // 3. Alphabetical
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  // Prepare grouped payees for autocomplete (sorted)
   const groupedPayees = [
     {
       label: "Saved Payees",
-      items: payees.filter(p => !p.transfer_account_id).map(p => ({
+      items: sortPayees(payees.filter(p => !p.transfer_account_id)).map(p => ({
         value: p.id,
         label: p.name,
       })),
     },
     {
       label: "Payments and Transfers",
-      items: payees.filter(p => p.transfer_account_id).map(p => ({
+      items: sortPayees(payees.filter(p => p.transfer_account_id)).map(p => ({
         value: p.id,
         label: p.name,
       })),
