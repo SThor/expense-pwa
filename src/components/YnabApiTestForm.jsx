@@ -148,8 +148,8 @@ export default function YnabApiTestForm({ setResult }) {
   function sortPayees(payeeList) {
     return [...payeeList].sort((a, b) => {
       // 1. Proximity
-      const locA = getClosestLocation(a.id);
-      const locB = getClosestLocation(b.id);
+      const locA = getClosestLocation(a.id, payeeLocations, userPosition);
+      const locB = getClosestLocation(b.id, payeeLocations, userPosition);
       if (userPosition && locA && locB) {
         if (locA.distance !== locB.distance) return locA.distance - locB.distance;
       } else if (userPosition && (locA || locB)) {

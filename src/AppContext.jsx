@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useState, useEffect } from "react";
 import * as ynab from "ynab";
-import { getSettleUpTokenFromEnv } from "./api/settleupTokenFromEnv";
+import { getSettleUpTokenFromEnv } from "./api/settleup";
 
 const AppContext = createContext();
 

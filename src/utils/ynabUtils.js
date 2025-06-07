@@ -18,7 +18,10 @@ export function getClosestLocation(payeeId, payeeLocations, userPosition) {
   if (locs.length === 0) return null;
   let minDist = Infinity, closest = null;
   for (const loc of locs) {
-    const dist = haversine(userPosition.lat, userPosition.lng, loc.latitude, loc.longitude);
+    // Ensure lat/lng are numbers
+    const lat = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
+    const lng = typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude;
+    const dist = haversine(userPosition.lat, userPosition.lng, lat, lng);
     if (dist < minDist) { minDist = dist; closest = loc; }
   }
   return closest ? { ...closest, distance: minDist } : null;
