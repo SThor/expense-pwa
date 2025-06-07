@@ -8,6 +8,9 @@ import { useAppContext } from "./AppContext";
 import EmojiCategoryButton from "./components/EmojiCategoryButton";
 import { getMostCommonCategoryFromTransactions } from "./utils/settleupUtils";
 
+// Default value for SettleUp emoji category
+const DEFAULT_SETTLEUP_CATEGORY = "∅";
+
 export default function App() {
   const [amountMilliunits, setAmountMilliunits] = useState(0); // YNAB format
   const [description, setDescription] = useState("");
@@ -27,7 +30,7 @@ export default function App() {
   // SettleUp integration state
   const { settleUpToken, settleUpUserId, settleUpLoading, settleUpError } =
     useAppContext();
-  const [settleUpCategory, setSettleUpCategory] = useState("∅");
+  const [settleUpCategory, setSettleUpCategory] = useState(DEFAULT_SETTLEUP_CATEGORY);
   const [settleUpGroups, setSettleUpGroups] = useState(null);
   const [settleUpTestGroup, setSettleUpTestGroup] = useState(null);
   const [settleUpMembers, setSettleUpMembers] = useState([]);
@@ -107,6 +110,17 @@ export default function App() {
   const handleCategoryChange = (val, item) => {
     setCategory(val);
     setCategoryId(item && item.value ? item.value : "");
+    // If SettleUp emoji is unset and YNAB category starts with emoji, set it
+    if (
+      settleUpCategory === DEFAULT_SETTLEUP_CATEGORY &&
+      item && item.label
+    ) {
+      // Regex to match emoji at the start
+      const emojiMatch = item.label.match(/^\p{Emoji}/u);
+      if (emojiMatch) {
+        setSettleUpCategory(emojiMatch[0]);
+      }
+    }
   };
 
   // Fetch SettleUp groups on mount if token/userId available
@@ -377,7 +391,11 @@ export default function App() {
             <EmojiCategoryButton value={settleUpCategory} onChange={setSettleUpCategory} />
             <GroupedAutocomplete
               value={payee}
-              onChange={handlePayeeChange}
+              onChange={(val, item) => {
+                setPayee(val);
+                setPayeeId(item && item.value ? item.value : "");
+                if (!val) setSettleUpCategory(DEFAULT_SETTLEUP_CATEGORY); // Clear emoji if payee cleared
+              }}
               groupedItems={groupedPayees}
               placeholder="Payee"
               onCreate={(val) => {
@@ -441,8 +459,22 @@ export default function App() {
             </div>
           )}
           <button
-            className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full"
+            className={`bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full ${
+              (!target.ynab && !target.settleup) || (target.ynab && !account.bourso && !account.swile)
+                ? ' opacity-50 cursor-not-allowed' : ''
+            }`}
             type="submit"
+            disabled={
+              (!target.ynab && !target.settleup) ||
+              (target.ynab && !account.bourso && !account.swile)
+            }
+            title={
+              !target.ynab && !target.settleup
+                ? 'Enable YNAB and/or SettleUp to add a transaction.'
+                : target.ynab && !account.bourso && !account.swile
+                ? 'Enable either BoursoBank or Swile account to add a YNAB transaction.'
+                : undefined
+            }
           >
             Add Transaction
           </button>
