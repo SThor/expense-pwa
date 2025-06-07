@@ -1,31 +1,34 @@
-import React from "react";
+import React, { forwardRef } from "react";
 import EmojiCategoryButton from "./EmojiCategoryButton";
 import GroupedAutocomplete from "./GroupedAutocomplete";
 import SuggestedCategoryPill from "./SuggestedCategoryPill";
 
-export default function DetailsSection({
-  payee,
-  setPayee,
-  payeeId,
-  setPayeeId,
-  groupedPayees,
-  settleUpCategory,
-  setSettleUpCategory,
-  DEFAULT_SETTLEUP_CATEGORY,
-  suggestedCategoryIds,
-  categories,
-  categoryGroups,
-  category,
-  setCategory,
-  categoryId,
-  setCategoryId,
-  groupedCategories,
-  handleCategoryChange,
-  description,
-  setDescription,
-}) {
+const DetailsSection = forwardRef(function DetailsSection(
+  {
+    payee,
+    setPayee,
+    payeeId,
+    setPayeeId,
+    groupedPayees,
+    settleUpCategory,
+    setSettleUpCategory,
+    DEFAULT_SETTLEUP_CATEGORY,
+    suggestedCategoryIds,
+    categories,
+    categoryGroups,
+    category,
+    setCategory,
+    categoryId,
+    setCategoryId,
+    groupedCategories,
+    handleCategoryChange,
+    description,
+    setDescription,
+  },
+  ref
+) {
   return (
-    <>
+    <div ref={ref}>
       <div>
         <label className="block text-sm font-medium text-sky-700 mb-1">Payee</label>
         <div className="flex items-center gap-2">
@@ -95,6 +98,8 @@ export default function DetailsSection({
           onChange={(e) => setDescription(e.target.value)}
         />
       </div>
-    </>
+    </div>
   );
-}
+});
+
+export default DetailsSection;

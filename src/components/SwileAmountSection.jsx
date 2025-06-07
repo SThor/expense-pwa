@@ -1,9 +1,9 @@
-import React from "react";
+import React, { forwardRef } from "react";
 import AmountInput from "./AmountInput";
 
-export default function SwileAmountSection({ swileMilliunits, setSwileMilliunits, max }) {
+const SwileAmountSection = forwardRef(function SwileAmountSection({ swileMilliunits, setSwileMilliunits, max }, ref) {
   return (
-    <div className="mb-4">
+    <div ref={ref} className="mb-4">
       <label className="block text-sm font-medium text-sky-700 mb-1">Amount paid by Swile</label>
       <AmountInput
         label="Amount paid by Swile"
@@ -14,4 +14,6 @@ export default function SwileAmountSection({ swileMilliunits, setSwileMilliunits
       />
     </div>
   );
-}
+});
+
+export default SwileAmountSection;

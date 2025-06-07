@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { getAccountIdByName } from "./utils/ynabUtils";
 import { useAppContext } from "./AppContext";
 import { getMostCommonCategoryFromTransactions } from "./utils/settleupUtils";
@@ -10,6 +10,8 @@ import AmountSection from "./components/AmountSection";
 import SwileAmountSection from "./components/SwileAmountSection";
 import DetailsSection from "./components/DetailsSection";
 import ReviewSection from "./components/ReviewSection";
+import { CSSTransition, TransitionGroup } from "react-transition-group";
+import "./index.css";
 
 // Default value for SettleUp emoji category
 const DEFAULT_SETTLEUP_CATEGORY = "∅";
@@ -48,6 +50,18 @@ export default function App() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useState(null);
   const [swileMilliunits, setSwileMilliunits] = useState(DEFAULT_SWILE_MILLIUNITS); // 25€ default
+
+  // Section reveal state
+  const [showAccounts, setShowAccounts] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+
+  // Section refs for CSSTransition to avoid findDOMNode warning
+  const amountRef = useRef(null);
+  const accountsRef = useRef(null);
+  const swileRef = useRef(null);
+  const detailsRef = useRef(null);
+  const reviewRef = useRef(null);
 
   // Fetch accounts, payees, and categories dynamically when budgetId or ynabAPI changes
   useEffect(() => {
@@ -455,6 +469,18 @@ export default function App() {
     }
   }, [account.swile, account.bourso]);
 
+  // Reveal logic
+  useEffect(() => {
+    if (target.ynab && amountMilliunits !== 0) setShowAccounts(true);
+    if (amountMilliunits !== 0 && (!target.ynab || (account.bourso || account.swile))) setShowDetails(true);
+    if (amountMilliunits !== 0 && (!target.ynab || (account.bourso || account.swile))) setShowReview(true);
+    if (amountMilliunits === 0) {
+      setShowAccounts(false);
+      setShowDetails(false);
+      setShowReview(false);
+    }
+  }, [amountMilliunits, target.ynab, account.bourso, account.swile]);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
       <div className="bg-white shadow rounded p-8 w-full max-w-md mb-10">
@@ -462,58 +488,69 @@ export default function App() {
           Quick Expense Entry
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* 1. App Toggles */}
           <AppToggles target={target} setTarget={setTarget} />
 
-          {/* 2. Amount */}
-          <AmountSection amountMilliunits={amountMilliunits} setAmountMilliunits={setAmountMilliunits} />
+          <TransitionGroup component={null}>
+            <CSSTransition key="amount" timeout={300} classNames="fade-slide" nodeRef={amountRef}>
+              <AmountSection ref={amountRef} amountMilliunits={amountMilliunits} setAmountMilliunits={setAmountMilliunits} />
+            </CSSTransition>
 
-          {/* 3. Account Toggles (YNAB only, after amount entered) */}
-          {target.ynab && (
-            <AccountToggles account={account} setAccount={setAccount} />
-          )}
+            {showAccounts && (
+              <CSSTransition key="accounts" timeout={300} classNames="fade-slide" nodeRef={accountsRef}>
+                <AccountToggles ref={accountsRef} account={account} setAccount={setAccount} />
+              </CSSTransition>
+            )}
 
-          {/* 4. Swile Amount (if swile is active) */}
-          {target.ynab && account.swile && (
-            <SwileAmountSection swileMilliunits={swileMilliunits} setSwileMilliunits={setSwileMilliunits} max={amountMilliunits} />
-          )}
+            {target.ynab && amountMilliunits !== 0 && account.swile && (
+              <CSSTransition key="swile" timeout={300} classNames="fade-slide" nodeRef={swileRef}>
+                <SwileAmountSection ref={swileRef} swileMilliunits={swileMilliunits} setSwileMilliunits={setSwileMilliunits} max={amountMilliunits} />
+              </CSSTransition>
+            )}
 
-          {/* 5. Details: Payee, Category, Description */}
-          <DetailsSection
-            payee={payee}
-            setPayee={setPayee}
-            payeeId={payeeId}
-            setPayeeId={setPayeeId}
-            groupedPayees={groupedPayees}
-            settleUpCategory={settleUpCategory}
-            setSettleUpCategory={setSettleUpCategory}
-            DEFAULT_SETTLEUP_CATEGORY={DEFAULT_SETTLEUP_CATEGORY}
-            suggestedCategoryIds={suggestedCategoryIds}
-            categories={categories}
-            categoryGroups={categoryGroups}
-            category={category}
-            setCategory={setCategory}
-            categoryId={categoryId}
-            setCategoryId={setCategoryId}
-            groupedCategories={groupedCategories}
-            handleCategoryChange={handleCategoryChange}
-            description={description}
-            setDescription={setDescription}
-          />
+            {showDetails && (
+              <CSSTransition key="details" timeout={300} classNames="fade-slide" nodeRef={detailsRef}>
+                <DetailsSection
+                  ref={detailsRef}
+                  payee={payee}
+                  setPayee={setPayee}
+                  payeeId={payeeId}
+                  setPayeeId={setPayeeId}
+                  groupedPayees={groupedPayees}
+                  settleUpCategory={settleUpCategory}
+                  setSettleUpCategory={setSettleUpCategory}
+                  DEFAULT_SETTLEUP_CATEGORY={DEFAULT_SETTLEUP_CATEGORY}
+                  suggestedCategoryIds={suggestedCategoryIds}
+                  categories={categories}
+                  categoryGroups={categoryGroups}
+                  category={category}
+                  setCategory={setCategory}
+                  categoryId={categoryId}
+                  setCategoryId={setCategoryId}
+                  groupedCategories={groupedCategories}
+                  handleCategoryChange={handleCategoryChange}
+                  description={description}
+                  setDescription={setDescription}
+                />
+              </CSSTransition>
+            )}
 
-          {/* 6. Review/Confirm: Summary before submit */}
-          <ReviewSection
-            amountMilliunits={amountMilliunits}
-            swileMilliunits={swileMilliunits}
-            payee={payee}
-            category={category}
-            description={description}
-            target={target}
-            account={account}
-            settleUpCategory={settleUpCategory}
-          />
+            {showReview && (
+              <CSSTransition key="review" timeout={300} classNames="fade-slide" nodeRef={reviewRef}>
+                <ReviewSection
+                  ref={reviewRef}
+                  amountMilliunits={amountMilliunits}
+                  swileMilliunits={swileMilliunits}
+                  payee={payee}
+                  category={category}
+                  description={description}
+                  target={target}
+                  account={account}
+                  settleUpCategory={settleUpCategory}
+                />
+              </CSSTransition>
+            )}
+          </TransitionGroup>
 
-          {/* SettleUp payer/forWhom selection if needed in future */}
           {settleUpResult && (
             <div
               className="text-sm mt-2"

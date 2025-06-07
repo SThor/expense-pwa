@@ -1,19 +1,19 @@
-import React from "react";
+import React, { forwardRef } from "react";
 import ToggleButton from "./ToggleButton";
 
-export default function AccountToggles({ account, setAccount, disabled }) {
+const AccountToggles = forwardRef(function AccountToggles(props, ref) {
   return (
-    <div className="flex gap-4 mb-4">
+    <div ref={ref} className="flex gap-4 mb-4">
       <ToggleButton
-        active={account.bourso}
+        active={props.account.bourso}
         color="#d20073"
         label="BoursoBank"
         icon="/boursobank-icon.png"
-        onClick={() => setAccount((a) => ({ ...a, bourso: !a.bourso }))}
-        disabled={disabled}
+        onClick={() => props.setAccount((a) => ({ ...a, bourso: !a.bourso }))}
+        disabled={props.disabled}
       />
       <ToggleButton
-        active={account.swile}
+        active={props.account.swile}
         gradientColors={[
           "#FF0080",
           "#7928CA",
@@ -26,9 +26,11 @@ export default function AccountToggles({ account, setAccount, disabled }) {
         ]}
         label="Swile"
         icon="/swile-icon.png"
-        onClick={() => setAccount((a) => ({ ...a, swile: !a.swile }))}
-        disabled={disabled}
+        onClick={() => props.setAccount((a) => ({ ...a, swile: !a.swile }))}
+        disabled={props.disabled}
       />
     </div>
   );
-}
+});
+
+export default AccountToggles;
