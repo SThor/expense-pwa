@@ -481,6 +481,20 @@ export default function App() {
     }
   }, [amountMilliunits, target.ynab, account.bourso, account.swile]);
 
+  // Preload toggle button images
+  useEffect(() => {
+    const icons = [
+      "/ynab-icon.png",
+      "/settleup-icon.png",
+      "/boursobank-icon.png",
+      "/swile-icon.png",
+    ];
+    icons.forEach((src) => {
+      const img = new window.Image();
+      img.src = src;
+    });
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
       <div className="bg-white shadow rounded p-8 w-full max-w-md mb-10">
