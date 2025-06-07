@@ -1,14 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
-import ToggleButton from "./components/ToggleButton";
-import AmountInput from "./components/AmountInput";
-import GroupedAutocomplete from "./components/GroupedAutocomplete";
-import SuggestedCategoryPill from "./components/SuggestedCategoryPill";
 import { getAccountIdByName } from "./utils/ynabUtils";
 import { useAppContext } from "./AppContext";
-import EmojiCategoryButton from "./components/EmojiCategoryButton";
 import { getMostCommonCategoryFromTransactions } from "./utils/settleupUtils";
 import { getClosestLocation } from "./utils/ynabUtils";
 import { useGeolocation } from "./hooks/useGeolocation";
+import AppToggles from "./components/AppToggles";
+import AccountToggles from "./components/AccountToggles";
+import AmountSection from "./components/AmountSection";
+import SwileAmountSection from "./components/SwileAmountSection";
+import DetailsSection from "./components/DetailsSection";
+import ReviewSection from "./components/ReviewSection";
 
 // Default value for SettleUp emoji category
 const DEFAULT_SETTLEUP_CATEGORY = "∅";
@@ -461,136 +462,57 @@ export default function App() {
           Quick Expense Entry
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-sky-700 mb-1">Total Spent</label>
-            <AmountInput
-              value={amountMilliunits}
-              onChange={setAmountMilliunits}
-            />
-          </div>
-          {/* Swile paid input for split transactions */}
-          {account.swile && account.bourso && (
-            <div>
-              <label className="block text-sm font-medium text-sky-700 mb-1">Amount paid by Swile</label>
-              <AmountInput
-                label="Amount paid by Swile"
-                value={swileMilliunits}
-                onChange={setSwileMilliunits}
-                min={0}
-                max={amountMilliunits}
-              />
-            </div>
+          {/* 1. App Toggles */}
+          <AppToggles target={target} setTarget={setTarget} />
+
+          {/* 2. Amount */}
+          <AmountSection amountMilliunits={amountMilliunits} setAmountMilliunits={setAmountMilliunits} />
+
+          {/* 3. Account Toggles (YNAB only, after amount entered) */}
+          {target.ynab && (
+            <AccountToggles account={account} setAccount={setAccount} />
           )}
-          <div className="flex gap-4">
-            <ToggleButton
-              active={target.ynab}
-              color="#5C6CFA"
-              label="YNAB"
-              icon="/ynab-icon.png"
-              onClick={() => setTarget((t) => ({ ...t, ynab: !t.ynab }))}
-            />
-            <ToggleButton
-              active={target.settleup}
-              color="#f2774a"
-              label="SettleUp"
-              icon="/settleup-icon.png"
-              onClick={() =>
-                setTarget((t) => ({ ...t, settleup: !t.settleup }))
-              }
-            />
-            <ToggleButton
-              active={account.bourso}
-              color="#d20073"
-              label="BoursoBank"
-              icon="/boursobank-icon.png"
-              onClick={() => setAccount((a) => ({ ...a, bourso: !a.bourso }))}
-            />
-            <ToggleButton
-              active={account.swile}
-              gradientColors={[
-                "#FF0080",
-                "#7928CA",
-                "#007AFF",
-                "#00FFE7",
-                "#00FF94",
-                "#FFD600",
-                "#FF4B1F",
-                "#FF0080",
-              ]}
-              label="Swile"
-              icon="/swile-icon.png"
-              onClick={() => setAccount((a) => ({ ...a, swile: !a.swile }))}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-sky-700 mb-1">Payee</label>
-            <div className="flex items-center gap-2">
-              <EmojiCategoryButton value={settleUpCategory} onChange={setSettleUpCategory} />
-              <GroupedAutocomplete
-                value={payee}
-                onChange={(val, item) => {
-                  setPayee(val);
-                  setPayeeId(item && item.value ? item.value : "");
-                  if (!val) setSettleUpCategory(DEFAULT_SETTLEUP_CATEGORY); // Clear emoji if payee cleared
-                }}
-                groupedItems={groupedPayees}
-                placeholder="Payee"
-                onCreate={(val) => {
-                  setPayee(val);
-                  setPayeeId("");
-                }}
-              />
-            </div>
-          </div>
-          {suggestedCategoryIds.length > 0 && (
-            <div>
-              <div className="text-sm text-gray-600 mb-2 font-semibold">
-                Suggested categories:
-              </div>
-              <div className="flex flex-wrap gap-2 mb-1">
-                {suggestedCategoryIds
-                  .map((catId) => {
-                    const cat = categories.find((c) => c.id === catId);
-                    if (!cat) return null;
-                    const group = categoryGroups.find((g) =>
-                      g.categories.some((c) => c.id === catId)
-                    );
-                    return (
-                      <SuggestedCategoryPill
-                        key={catId}
-                        cat={cat}
-                        group={group}
-                        selected={categoryId === catId}
-                        onClick={() => {
-                          setCategory(cat.name);
-                          setCategoryId(catId);
-                        }}
-                      />
-                    );
-                  })
-                  .filter(Boolean)}
-              </div>
-            </div>
+
+          {/* 4. Swile Amount (if swile is active) */}
+          {target.ynab && account.swile && (
+            <SwileAmountSection swileMilliunits={swileMilliunits} setSwileMilliunits={setSwileMilliunits} max={amountMilliunits} />
           )}
-          <div>
-            <label className="block text-sm font-medium text-sky-700 mb-1">Category</label>
-            <GroupedAutocomplete
-              value={category}
-              onChange={handleCategoryChange}
-              groupedItems={groupedCategories}
-              placeholder="Category"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-sky-700 mb-1">Description</label>
-            <input
-              className="input input-bordered w-full px-3 py-2 border rounded"
-              type="text"
-              placeholder="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
+
+          {/* 5. Details: Payee, Category, Description */}
+          <DetailsSection
+            payee={payee}
+            setPayee={setPayee}
+            payeeId={payeeId}
+            setPayeeId={setPayeeId}
+            groupedPayees={groupedPayees}
+            settleUpCategory={settleUpCategory}
+            setSettleUpCategory={setSettleUpCategory}
+            DEFAULT_SETTLEUP_CATEGORY={DEFAULT_SETTLEUP_CATEGORY}
+            suggestedCategoryIds={suggestedCategoryIds}
+            categories={categories}
+            categoryGroups={categoryGroups}
+            category={category}
+            setCategory={setCategory}
+            categoryId={categoryId}
+            setCategoryId={setCategoryId}
+            groupedCategories={groupedCategories}
+            handleCategoryChange={handleCategoryChange}
+            description={description}
+            setDescription={setDescription}
+          />
+
+          {/* 6. Review/Confirm: Summary before submit */}
+          <ReviewSection
+            amountMilliunits={amountMilliunits}
+            swileMilliunits={swileMilliunits}
+            payee={payee}
+            category={category}
+            description={description}
+            target={target}
+            account={account}
+            settleUpCategory={settleUpCategory}
+          />
+
           {/* SettleUp payer/forWhom selection if needed in future */}
           {settleUpResult && (
             <div
