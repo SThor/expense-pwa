@@ -10,6 +10,8 @@ import { getMostCommonCategoryFromTransactions } from "./utils/settleupUtils";
 
 // Default value for SettleUp emoji category
 const DEFAULT_SETTLEUP_CATEGORY = "∅";
+// Default Swile paid amount (in milliunits, -25€)
+const DEFAULT_SWILE_MILLIUNITS = -25000;
 
 export default function App() {
   const [amountMilliunits, setAmountMilliunits] = useState(0); // YNAB format
@@ -40,6 +42,7 @@ export default function App() {
   const [settleUpResult, setSettleUpResult] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useState(null);
+  const [swileMilliunits, setSwileMilliunits] = useState(DEFAULT_SWILE_MILLIUNITS); // 25€ default
 
   // Fetch accounts, payees, and categories dynamically when budgetId or ynabAPI changes
   useEffect(() => {
@@ -226,6 +229,58 @@ export default function App() {
   // --- YNAB transaction submit logic ---
   async function handleYnabSubmit() {
     if (!ynabAPI || !budgetId) return;
+    // Split transaction logic
+    if (account.swile && account.bourso) {
+      // Swile account is the main account for the split
+      const swileAccountId = getAccountIdByName(accounts, "Swile");
+      const boursoAccountId = getAccountIdByName(accounts, "Boursorama");
+      if (!swileAccountId || !boursoAccountId) {
+        alert("No matching YNAB account found for Swile or Bourso.");
+        return;
+      }
+      // Calculate transfer inflow for Bourso (should be positive)
+      const transferInflowMilliunits = swileMilliunits - amountMilliunits; // This will be positive if swileMilliunits > amountMilliunits
+      // Compose split transaction
+      const boursoTransferPayeeId = "eabe1e60-fa92-40f7-8636-5c8bcbf1404a"; // Transfer : Boursorama
+      const transaction = {
+        account_id: swileAccountId,
+        date: new Date().toISOString().slice(0, 10),
+        amount: swileMilliunits, // Parent amount must equal sum of subtransactions
+        payee_id: payeeId || null, // User's payee for the main outflow
+        payee_name: !payeeId ? payee : undefined,
+        category_id: null, // Split transactions must not have a category at the parent level
+        memo: description,
+        approved: true,
+        subtransactions: [
+          {
+            amount: amountMilliunits, // Outflow (total spent, negative)
+            category_id: categoryId,
+            memo: description,
+            payee_id: payeeId || null, // User's payee for the main outflow
+          },
+          {
+            amount: transferInflowMilliunits, // Inflow (transfer from Bourso, positive)
+            payee_id: boursoTransferPayeeId, // Use the transfer payee id for Boursorama
+            transfer_account_id: boursoAccountId, // This will use the transfer payee for Bourso
+            memo: "Bourso completion",
+          },
+        ],
+      };
+      try {
+        console.log('[YNAB] Split Request:', transaction);
+        const res = await ynabAPI.transactions.createTransaction(budgetId, { transaction });
+        console.log('[YNAB] Split Response:', res);
+        setSettleUpResult('✅ YNAB split transaction sent!');
+        setAmountMilliunits(0);
+        setDescription("");
+        setSwileMilliunits(DEFAULT_SWILE_MILLIUNITS);
+      } catch (err) {
+        console.error('[YNAB] API error:', err);
+        setSettleUpResult('YNAB API error: ' + (err?.message || err));
+      }
+      return;
+    }
+    // ...existing code for single-account transaction...
     let accountId = null;
     if (account.bourso)
       accountId = getAccountIdByName(accounts, "Boursorama");
@@ -249,7 +304,6 @@ export default function App() {
       console.log('[YNAB] Request:', transaction);
       const res = await ynabAPI.transactions.createTransaction(budgetId, { transaction });
       console.log('[YNAB] Response:', res);
-      // Optionally show a success message or update UI
       setSettleUpResult('✅ YNAB transaction sent!');
       setAmountMilliunits(0);
       setDescription("");
@@ -334,6 +388,13 @@ export default function App() {
     }
   }
 
+  // Reset swileMilliunits to default when toggles change
+  useEffect(() => {
+    if (account.swile && account.bourso) {
+      setSwileMilliunits(DEFAULT_SWILE_MILLIUNITS);
+    }
+  }, [account.swile, account.bourso]);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
       <div className="bg-white shadow rounded p-8 w-full max-w-md mb-10">
@@ -341,10 +402,26 @@ export default function App() {
           Quick Expense Entry
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <AmountInput
-            value={amountMilliunits}
-            onChange={setAmountMilliunits}
-          />
+          <div>
+            <label className="block text-sm font-medium text-sky-700 mb-1">Total Spent</label>
+            <AmountInput
+              value={amountMilliunits}
+              onChange={setAmountMilliunits}
+            />
+          </div>
+          {/* Swile paid input for split transactions */}
+          {account.swile && account.bourso && (
+            <div>
+              <label className="block text-sm font-medium text-sky-700 mb-1">Amount paid by Swile</label>
+              <AmountInput
+                label="Amount paid by Swile"
+                value={swileMilliunits}
+                onChange={setSwileMilliunits}
+                min={0}
+                max={amountMilliunits}
+              />
+            </div>
+          )}
           <div className="flex gap-4">
             <ToggleButton
               active={target.ynab}
@@ -386,23 +463,25 @@ export default function App() {
               onClick={() => setAccount((a) => ({ ...a, swile: !a.swile }))}
             />
           </div>
-          <div className="flex items-center gap-2">
-            {/* Emoji picker always visible */}
-            <EmojiCategoryButton value={settleUpCategory} onChange={setSettleUpCategory} />
-            <GroupedAutocomplete
-              value={payee}
-              onChange={(val, item) => {
-                setPayee(val);
-                setPayeeId(item && item.value ? item.value : "");
-                if (!val) setSettleUpCategory(DEFAULT_SETTLEUP_CATEGORY); // Clear emoji if payee cleared
-              }}
-              groupedItems={groupedPayees}
-              placeholder="Payee"
-              onCreate={(val) => {
-                setPayee(val);
-                setPayeeId("");
-              }}
-            />
+          <div>
+            <label className="block text-sm font-medium text-sky-700 mb-1">Payee</label>
+            <div className="flex items-center gap-2">
+              <EmojiCategoryButton value={settleUpCategory} onChange={setSettleUpCategory} />
+              <GroupedAutocomplete
+                value={payee}
+                onChange={(val, item) => {
+                  setPayee(val);
+                  setPayeeId(item && item.value ? item.value : "");
+                  if (!val) setSettleUpCategory(DEFAULT_SETTLEUP_CATEGORY); // Clear emoji if payee cleared
+                }}
+                groupedItems={groupedPayees}
+                placeholder="Payee"
+                onCreate={(val) => {
+                  setPayee(val);
+                  setPayeeId("");
+                }}
+              />
+            </div>
           </div>
           {suggestedCategoryIds.length > 0 && (
             <div>
@@ -434,19 +513,25 @@ export default function App() {
               </div>
             </div>
           )}
-          <GroupedAutocomplete
-            value={category}
-            onChange={handleCategoryChange}
-            groupedItems={groupedCategories}
-            placeholder="Category"
-          />
-          <input
-            className="input input-bordered w-full px-3 py-2 border rounded"
-            type="text"
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <div>
+            <label className="block text-sm font-medium text-sky-700 mb-1">Category</label>
+            <GroupedAutocomplete
+              value={category}
+              onChange={handleCategoryChange}
+              groupedItems={groupedCategories}
+              placeholder="Category"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-sky-700 mb-1">Description</label>
+            <input
+              className="input input-bordered w-full px-3 py-2 border rounded"
+              type="text"
+              placeholder="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
           {/* SettleUp payer/forWhom selection if needed in future */}
           {settleUpResult && (
             <div
