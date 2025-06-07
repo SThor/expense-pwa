@@ -162,22 +162,39 @@ export default function YnabApiTestForm({ setResult }) {
   }
 
   // Memoized grouped payees for autocomplete (sorted)
-  const groupedPayees = useMemo(() => [
-    {
+  const closestPayees = useMemo(() => {
+    if (!userPosition || !payeeLocations.length) return [];
+    // Only payees with a location
+    const payeesWithLoc = payees.filter(p => getClosestLocation(p.id, payeeLocations, userPosition));
+    // Sort by distance
+    const sorted = sortPayees(payeesWithLoc);
+    return sorted.slice(0, 3);
+  }, [payees, userPosition, payeeLocations]);
+
+  const groupedPayees = useMemo(() => {
+    const groups = [];
+    if (closestPayees.length > 0) {
+      groups.push({
+        label: 'Closest to you',
+        items: closestPayees.map(p => ({ value: p.id, label: p.name })),
+      });
+    }
+    groups.push({
       label: "Saved Payees",
-      items: sortPayees(payees.filter(p => !p.transfer_account_id)).map(p => ({
+      items: sortPayees(payees.filter(p => !p.transfer_account_id && !closestPayees.some(cp => cp.id === p.id))).map(p => ({
         value: p.id,
         label: p.name,
       })),
-    },
-    {
+    });
+    groups.push({
       label: "Payments and Transfers",
       items: sortPayees(payees.filter(p => p.transfer_account_id)).map(p => ({
         value: p.id,
         label: p.name,
       })),
-    }
-  ], [payees, userPosition, payeeLocations]);
+    });
+    return groups.filter(g => g.items.length > 0);
+  }, [payees, userPosition, payeeLocations, closestPayees]);
 
   // Memoized grouped categories for autocomplete
   const groupedCategories = useMemo(() =>

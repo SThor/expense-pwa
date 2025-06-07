@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import ToggleButton from "./components/ToggleButton";
 import AmountInput from "./components/AmountInput";
 import GroupedAutocomplete from "./components/GroupedAutocomplete";
@@ -7,6 +7,8 @@ import { getAccountIdByName } from "./utils/ynabUtils";
 import { useAppContext } from "./AppContext";
 import EmojiCategoryButton from "./components/EmojiCategoryButton";
 import { getMostCommonCategoryFromTransactions } from "./utils/settleupUtils";
+import { getClosestLocation } from "./utils/ynabUtils";
+import { useGeolocation } from "./hooks/useGeolocation";
 
 // Default value for SettleUp emoji category
 const DEFAULT_SETTLEUP_CATEGORY = "∅";
@@ -28,6 +30,8 @@ export default function App() {
   const [category, setCategory] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [suggestedCategoryIds, setSuggestedCategoryIds] = useState([]);
+  const [payeeLocations, setPayeeLocations] = useState([]);
+  const userPosition = useGeolocation();
 
   // SettleUp integration state
   const { settleUpToken, settleUpUserId, settleUpLoading, settleUpError } =
@@ -87,13 +91,68 @@ export default function App() {
       });
   }, [ynabAPI, payeeId, budgetId]);
 
-  // Memoized grouped payees for autocomplete (sorted, simple alpha)
-  const groupedPayees = [
-    {
-      label: "Payees",
-      items: payees.map((p) => ({ value: p.id, label: p.name })),
-    },
-  ];
+  // Fetch payee locations after payees are loaded
+  useEffect(() => {
+    if (!ynabAPI || !budgetId || payees.length === 0) return;
+    async function fetchLocations() {
+      try {
+        const res = await ynabAPI.payeeLocations.getPayeeLocations(budgetId);
+        setPayeeLocations(res.data.payee_locations);
+      } catch (e) {
+        // Ignore location errors for now
+      }
+    }
+    fetchLocations();
+  }, [ynabAPI, budgetId, payees.length]);
+
+  // Sort payees: by proximity, then alpha
+  function sortPayees(payeeList) {
+    return [...payeeList].sort((a, b) => {
+      const locA = getClosestLocation(a.id, payeeLocations, userPosition);
+      const locB = getClosestLocation(b.id, payeeLocations, userPosition);
+      if (userPosition && locA && locB) {
+        if (locA.distance !== locB.distance) return locA.distance - locB.distance;
+      } else if (userPosition && (locA || locB)) {
+        return locA ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  // Memoized closest payees (top 3 by proximity)
+  const closestPayees = useMemo(() => {
+    if (!userPosition || !payeeLocations.length) return [];
+    const payeesWithLoc = payees.filter(p => getClosestLocation(p.id, payeeLocations, userPosition));
+    const sorted = sortPayees(payeesWithLoc);
+    return sorted.slice(0, 3);
+  }, [payees, userPosition, payeeLocations]);
+
+  // Memoized grouped payees for autocomplete (with proximity group)
+  const groupedPayees = useMemo(() => {
+    const groups = [];
+    if (closestPayees.length > 0) {
+      groups.push({
+        label: 'Closest to you',
+        items: closestPayees.map(p => ({ value: p.id, label: p.name })),
+      });
+    }
+    groups.push({
+      label: "Saved Payees",
+      items: sortPayees(payees.filter(p => !p.transfer_account_id && !closestPayees.some(cp => cp.id === p.id))).map(p => ({
+        value: p.id,
+        label: p.name,
+      })),
+    });
+    groups.push({
+      label: "Payments and Transfers",
+      items: sortPayees(payees.filter(p => p.transfer_account_id)).map(p => ({
+        value: p.id,
+        label: p.name,
+      })),
+    });
+    return groups.filter(g => g.items.length > 0);
+  }, [payees, userPosition, payeeLocations, closestPayees]);
+
   // Memoized grouped categories for autocomplete
   const groupedCategories = categoryGroups
     .filter((g) => g.categories && g.categories.length > 0)
