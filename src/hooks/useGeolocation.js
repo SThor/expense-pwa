@@ -17,7 +17,6 @@ export function useGeolocation(options = { enableHighAccuracy: true, timeout: 50
       options
     );
     // Only run once on mount
-    // eslint-disable-next-line
   }, []);
 
   return position;

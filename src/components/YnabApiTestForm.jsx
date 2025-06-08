@@ -56,7 +56,6 @@ export default function YnabApiTestForm({ setResult }) {
       }
     }
     fetchBudgets();
-    // eslint-disable-next-line
   }, [ynabAPI]);
 
   // Fetch accounts/payees/categories when budgetId changes

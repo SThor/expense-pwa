@@ -42,19 +42,17 @@ export default function App() {
   const [settleUpCategory, setSettleUpCategory] = useState(DEFAULT_SETTLEUP_CATEGORY);
   const [settleUpGroups, setSettleUpGroups] = useState(null);
   const [settleUpTestGroup, setSettleUpTestGroup] = useState(null);
-  const [settleUpMembers, setSettleUpMembers] = useState([]);
   const [settleUpPayerId, setSettleUpPayerId] = useState("");
   const [settleUpForWhomIds, setSettleUpForWhomIds] = useState([]);
   const [settleUpCurrency, setSettleUpCurrency] = useState("");
   const [settleUpResult, setSettleUpResult] = useState("");
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const emojiPickerRef = useState(null);
   const [swileMilliunits, setSwileMilliunits] = useState(DEFAULT_SWILE_MILLIUNITS); // 25€ default
 
   // Section reveal state
   const [showAccounts, setShowAccounts] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [showReview, setShowReview] = useState(false);
+  const [showSwile, setShowSwile] = useState(false);
 
   // Section refs for CSSTransition to avoid findDOMNode warning
   const amountRef = useRef(null);
@@ -266,7 +264,6 @@ export default function App() {
       .then((data) => {
         if (data) {
           const arr = Object.entries(data).map(([id, m]) => ({ id, ...m }));
-          setSettleUpMembers(arr);
           setSettleUpForWhomIds(
             arr.filter((m) => m.active !== false).map((m) => m.id)
           );
@@ -297,7 +294,6 @@ export default function App() {
       }
     }, 500);
     return () => clearTimeout(handler);
-    // eslint-disable-next-line
   }, [payee, settleUpTestGroup?.groupId, settleUpToken]);
 
   // --- YNAB transaction submit logic ---
@@ -471,14 +467,12 @@ export default function App() {
 
   // Reveal logic
   useEffect(() => {
-    if (target.ynab && amountMilliunits !== 0) setShowAccounts(true);
-    if (amountMilliunits !== 0 && (!target.ynab || (account.bourso || account.swile))) setShowDetails(true);
-    if (amountMilliunits !== 0 && (!target.ynab || (account.bourso || account.swile))) setShowReview(true);
-    if (amountMilliunits === 0) {
-      setShowAccounts(false);
-      setShowDetails(false);
-      setShowReview(false);
-    }
+    const shouldShowDetails = amountMilliunits !== 0 && (!target.ynab || account.bourso || account.swile);
+
+    setShowAccounts(target.ynab && amountMilliunits !== 0);
+    setShowDetails(shouldShowDetails);
+    setShowReview(shouldShowDetails);
+    setShowSwile(target.ynab && amountMilliunits !== 0 && account.swile);
   }, [amountMilliunits, target.ynab, account.bourso, account.swile]);
 
   // Preload toggle button images
@@ -515,7 +509,7 @@ export default function App() {
               </CSSTransition>
             )}
 
-            {target.ynab && amountMilliunits !== 0 && account.swile && (
+            {showSwile && (
               <CSSTransition key="swile" timeout={300} classNames="fade-slide" nodeRef={swileRef}>
                 <SwileAmountSection ref={swileRef} swileMilliunits={swileMilliunits} setSwileMilliunits={setSwileMilliunits} max={amountMilliunits} />
               </CSSTransition>

@@ -30,10 +30,11 @@ const DetailsSection = forwardRef(function DetailsSection(
   return (
     <div ref={ref}>
       <div>
-        <label className="block text-sm font-medium text-sky-700 mb-1">Payee</label>
+        <label htmlFor="payee-autocomplete" className="block text-sm font-medium text-sky-700 mb-1">Payee</label>
         <div className="flex items-center gap-2">
           <EmojiCategoryButton value={settleUpCategory} onChange={setSettleUpCategory} />
           <GroupedAutocomplete
+            id="payee-autocomplete"
             value={payee}
             onChange={(val, item) => {
               setPayee(val);
@@ -80,8 +81,9 @@ const DetailsSection = forwardRef(function DetailsSection(
         </div>
       )}
       <div>
-        <label className="block text-sm font-medium text-sky-700 mb-1">Category</label>
+        <label htmlFor="category-autocomplete" className="block text-sm font-medium text-sky-700 mb-1">Category</label>
         <GroupedAutocomplete
+          id="category-autocomplete"
           value={category}
           onChange={handleCategoryChange}
           groupedItems={groupedCategories}
@@ -89,8 +91,9 @@ const DetailsSection = forwardRef(function DetailsSection(
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-sky-700 mb-1">Description</label>
+        <label htmlFor="description-input" className="block text-sm font-medium text-sky-700 mb-1">Description</label>
         <input
+          id="description-input"
           className="input input-bordered w-full px-3 py-2 border rounded"
           type="text"
           placeholder="Description"

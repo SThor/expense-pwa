@@ -30,23 +30,6 @@ export default function SettleUpApiTestForm({ result, setResult }) {
   const userChangedCategory = useRef(false);
   // Emoji picker dropdown state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const emojiPickerRef = useRef();
-
-  // Close emoji picker on outside click
-  useEffect(() => {
-    if (!showEmojiPicker) return;
-    function handleClick(e) {
-      if (
-        emojiPickerRef.current &&
-        !emojiPickerRef.current.contains(e.target)
-      ) {
-        setShowEmojiPicker(false);
-      }
-    }
-    window.addEventListener("mousedown", handleClick);
-    return () => window.removeEventListener("mousedown", handleClick);
-  }, [showEmojiPicker]);
-
   // List groups for the authenticated user
   const handleListGroups = async () => {
     console.log('[SettleUp] handleListGroups called', { token, userId });
@@ -316,7 +299,6 @@ export default function SettleUpApiTestForm({ result, setResult }) {
       }
     }, 500);
     return () => clearTimeout(handler);
-    // eslint-disable-next-line
   }, [desc, testGroup?.groupId, token]);
 
   // Track if user manually changes category after autofill
