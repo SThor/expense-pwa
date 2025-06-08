@@ -1,14 +1,17 @@
-import { useState, useEffect, useMemo } from "react";
-import ToggleButton from "./components/ToggleButton";
-import AmountInput from "./components/AmountInput";
-import GroupedAutocomplete from "./components/GroupedAutocomplete";
-import SuggestedCategoryPill from "./components/SuggestedCategoryPill";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { getAccountIdByName } from "./utils/ynabUtils";
 import { useAppContext } from "./AppContext";
-import EmojiCategoryButton from "./components/EmojiCategoryButton";
 import { getMostCommonCategoryFromTransactions } from "./utils/settleupUtils";
 import { getClosestLocation } from "./utils/ynabUtils";
 import { useGeolocation } from "./hooks/useGeolocation";
+import AppToggles from "./components/AppToggles";
+import AccountToggles from "./components/AccountToggles";
+import AmountSection from "./components/AmountSection";
+import SwileAmountSection from "./components/SwileAmountSection";
+import DetailsSection from "./components/DetailsSection";
+import ReviewSection from "./components/ReviewSection";
+import { CSSTransition, TransitionGroup } from "react-transition-group";
+import "./index.css";
 
 // Default value for SettleUp emoji category
 const DEFAULT_SETTLEUP_CATEGORY = "∅";
@@ -39,14 +42,24 @@ export default function App() {
   const [settleUpCategory, setSettleUpCategory] = useState(DEFAULT_SETTLEUP_CATEGORY);
   const [settleUpGroups, setSettleUpGroups] = useState(null);
   const [settleUpTestGroup, setSettleUpTestGroup] = useState(null);
-  const [settleUpMembers, setSettleUpMembers] = useState([]);
   const [settleUpPayerId, setSettleUpPayerId] = useState("");
   const [settleUpForWhomIds, setSettleUpForWhomIds] = useState([]);
   const [settleUpCurrency, setSettleUpCurrency] = useState("");
   const [settleUpResult, setSettleUpResult] = useState("");
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const emojiPickerRef = useState(null);
   const [swileMilliunits, setSwileMilliunits] = useState(DEFAULT_SWILE_MILLIUNITS); // 25€ default
+
+  // Section reveal state
+  const [showAccounts, setShowAccounts] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const [showSwile, setShowSwile] = useState(false);
+
+  // Section refs for CSSTransition to avoid findDOMNode warning
+  const amountRef = useRef(null);
+  const accountsRef = useRef(null);
+  const swileRef = useRef(null);
+  const detailsRef = useRef(null);
+  const reviewRef = useRef(null);
 
   // Fetch accounts, payees, and categories dynamically when budgetId or ynabAPI changes
   useEffect(() => {
@@ -251,7 +264,6 @@ export default function App() {
       .then((data) => {
         if (data) {
           const arr = Object.entries(data).map(([id, m]) => ({ id, ...m }));
-          setSettleUpMembers(arr);
           setSettleUpForWhomIds(
             arr.filter((m) => m.active !== false).map((m) => m.id)
           );
@@ -282,7 +294,6 @@ export default function App() {
       }
     }, 500);
     return () => clearTimeout(handler);
-    // eslint-disable-next-line
   }, [payee, settleUpTestGroup?.groupId, settleUpToken]);
 
   // --- YNAB transaction submit logic ---
@@ -454,6 +465,30 @@ export default function App() {
     }
   }, [account.swile, account.bourso]);
 
+  // Reveal logic
+  useEffect(() => {
+    const shouldShowDetails = amountMilliunits !== 0 && (!target.ynab || account.bourso || account.swile);
+
+    setShowAccounts(target.ynab && amountMilliunits !== 0);
+    setShowDetails(shouldShowDetails);
+    setShowReview(shouldShowDetails);
+    setShowSwile(target.ynab && amountMilliunits !== 0 && account.swile);
+  }, [amountMilliunits, target.ynab, account.bourso, account.swile]);
+
+  // Preload toggle button images
+  useEffect(() => {
+    const icons = [
+      "/ynab-icon.png",
+      "/settleup-icon.png",
+      "/boursobank-icon.png",
+      "/swile-icon.png",
+    ];
+    icons.forEach((src) => {
+      const img = new window.Image();
+      img.src = src;
+    });
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
       <div className="bg-white shadow rounded p-8 w-full max-w-md mb-10">
@@ -461,137 +496,69 @@ export default function App() {
           Quick Expense Entry
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-sky-700 mb-1">Total Spent</label>
-            <AmountInput
-              value={amountMilliunits}
-              onChange={setAmountMilliunits}
-            />
-          </div>
-          {/* Swile paid input for split transactions */}
-          {account.swile && account.bourso && (
-            <div>
-              <label className="block text-sm font-medium text-sky-700 mb-1">Amount paid by Swile</label>
-              <AmountInput
-                label="Amount paid by Swile"
-                value={swileMilliunits}
-                onChange={setSwileMilliunits}
-                min={0}
-                max={amountMilliunits}
-              />
-            </div>
-          )}
-          <div className="flex gap-4">
-            <ToggleButton
-              active={target.ynab}
-              color="#5C6CFA"
-              label="YNAB"
-              icon="/ynab-icon.png"
-              onClick={() => setTarget((t) => ({ ...t, ynab: !t.ynab }))}
-            />
-            <ToggleButton
-              active={target.settleup}
-              color="#f2774a"
-              label="SettleUp"
-              icon="/settleup-icon.png"
-              onClick={() =>
-                setTarget((t) => ({ ...t, settleup: !t.settleup }))
-              }
-            />
-            <ToggleButton
-              active={account.bourso}
-              color="#d20073"
-              label="BoursoBank"
-              icon="/boursobank-icon.png"
-              onClick={() => setAccount((a) => ({ ...a, bourso: !a.bourso }))}
-            />
-            <ToggleButton
-              active={account.swile}
-              gradientColors={[
-                "#FF0080",
-                "#7928CA",
-                "#007AFF",
-                "#00FFE7",
-                "#00FF94",
-                "#FFD600",
-                "#FF4B1F",
-                "#FF0080",
-              ]}
-              label="Swile"
-              icon="/swile-icon.png"
-              onClick={() => setAccount((a) => ({ ...a, swile: !a.swile }))}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-sky-700 mb-1">Payee</label>
-            <div className="flex items-center gap-2">
-              <EmojiCategoryButton value={settleUpCategory} onChange={setSettleUpCategory} />
-              <GroupedAutocomplete
-                value={payee}
-                onChange={(val, item) => {
-                  setPayee(val);
-                  setPayeeId(item && item.value ? item.value : "");
-                  if (!val) setSettleUpCategory(DEFAULT_SETTLEUP_CATEGORY); // Clear emoji if payee cleared
-                }}
-                groupedItems={groupedPayees}
-                placeholder="Payee"
-                onCreate={(val) => {
-                  setPayee(val);
-                  setPayeeId("");
-                }}
-              />
-            </div>
-          </div>
-          {suggestedCategoryIds.length > 0 && (
-            <div>
-              <div className="text-sm text-gray-600 mb-2 font-semibold">
-                Suggested categories:
-              </div>
-              <div className="flex flex-wrap gap-2 mb-1">
-                {suggestedCategoryIds
-                  .map((catId) => {
-                    const cat = categories.find((c) => c.id === catId);
-                    if (!cat) return null;
-                    const group = categoryGroups.find((g) =>
-                      g.categories.some((c) => c.id === catId)
-                    );
-                    return (
-                      <SuggestedCategoryPill
-                        key={catId}
-                        cat={cat}
-                        group={group}
-                        selected={categoryId === catId}
-                        onClick={() => {
-                          setCategory(cat.name);
-                          setCategoryId(catId);
-                        }}
-                      />
-                    );
-                  })
-                  .filter(Boolean)}
-              </div>
-            </div>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-sky-700 mb-1">Category</label>
-            <GroupedAutocomplete
-              value={category}
-              onChange={handleCategoryChange}
-              groupedItems={groupedCategories}
-              placeholder="Category"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-sky-700 mb-1">Description</label>
-            <input
-              className="input input-bordered w-full px-3 py-2 border rounded"
-              type="text"
-              placeholder="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          {/* SettleUp payer/forWhom selection if needed in future */}
+          <AppToggles target={target} setTarget={setTarget} />
+
+          <TransitionGroup component={null}>
+            <CSSTransition key="amount" timeout={300} classNames="fade-slide" nodeRef={amountRef}>
+              <AmountSection ref={amountRef} amountMilliunits={amountMilliunits} setAmountMilliunits={setAmountMilliunits} />
+            </CSSTransition>
+
+            {showAccounts && (
+              <CSSTransition key="accounts" timeout={300} classNames="fade-slide" nodeRef={accountsRef}>
+                <AccountToggles ref={accountsRef} account={account} setAccount={setAccount} />
+              </CSSTransition>
+            )}
+
+            {showSwile && (
+              <CSSTransition key="swile" timeout={300} classNames="fade-slide" nodeRef={swileRef}>
+                <SwileAmountSection ref={swileRef} swileMilliunits={swileMilliunits} setSwileMilliunits={setSwileMilliunits} max={amountMilliunits} />
+              </CSSTransition>
+            )}
+
+            {showDetails && (
+              <CSSTransition key="details" timeout={300} classNames="fade-slide" nodeRef={detailsRef}>
+                <DetailsSection
+                  ref={detailsRef}
+                  payee={payee}
+                  setPayee={setPayee}
+                  payeeId={payeeId}
+                  setPayeeId={setPayeeId}
+                  groupedPayees={groupedPayees}
+                  settleUpCategory={settleUpCategory}
+                  setSettleUpCategory={setSettleUpCategory}
+                  DEFAULT_SETTLEUP_CATEGORY={DEFAULT_SETTLEUP_CATEGORY}
+                  suggestedCategoryIds={suggestedCategoryIds}
+                  categories={categories}
+                  categoryGroups={categoryGroups}
+                  category={category}
+                  setCategory={setCategory}
+                  categoryId={categoryId}
+                  setCategoryId={setCategoryId}
+                  groupedCategories={groupedCategories}
+                  handleCategoryChange={handleCategoryChange}
+                  description={description}
+                  setDescription={setDescription}
+                />
+              </CSSTransition>
+            )}
+
+            {showReview && (
+              <CSSTransition key="review" timeout={300} classNames="fade-slide" nodeRef={reviewRef}>
+                <ReviewSection
+                  ref={reviewRef}
+                  amountMilliunits={amountMilliunits}
+                  swileMilliunits={swileMilliunits}
+                  payee={payee}
+                  category={category}
+                  description={description}
+                  target={target}
+                  account={account}
+                  settleUpCategory={settleUpCategory}
+                />
+              </CSSTransition>
+            )}
+          </TransitionGroup>
+
           {settleUpResult && (
             <div
               className="text-sm mt-2"

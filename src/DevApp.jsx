@@ -10,12 +10,14 @@ export default function DevApp() {
 
   if (showAppOnly) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
-        <button className="underline text-sky-700 mb-4 self-start ml-8 mt-8" onClick={() => setShowAppOnly(false)}>
-          ← Back to DevApp
-        </button>
-        <App />
-      </div>
+      <AppProvider>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
+          <button className="underline text-sky-700 mb-4 self-start ml-8 mt-8" onClick={() => setShowAppOnly(false)}>
+            ← Back to DevApp
+          </button>
+          <App />
+        </div>
+      </AppProvider>
     );
   }
 
