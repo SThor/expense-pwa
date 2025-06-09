@@ -12,6 +12,13 @@ import DetailsSection from "./components/DetailsSection";
 import ReviewSection from "./components/ReviewSection";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import "./index.css";
+import {
+  fetchSettleUpUserGroups,
+  fetchSettleUpGroup,
+  fetchSettleUpMembers,
+  fetchSettleUpTransactions,
+  addSettleUpTransaction
+} from "./api/settleup.js";
 
 // Default value for SettleUp emoji category
 const DEFAULT_SETTLEUP_CATEGORY = "∅";
@@ -202,12 +209,9 @@ export default function App() {
   useEffect(() => {
     if (!settleUpLoading && !settleUpError && settleUpToken && settleUpUserId) {
       setSettleUpResult("Loading groups...");
-      fetch(
-        `https://settle-up-sandbox.firebaseio.com/userGroups/${settleUpUserId}.json?auth=${settleUpToken}`
-      )
-        .then((res) => res.json())
+      fetchSettleUpUserGroups(settleUpToken, settleUpUserId)
         .then((data) => {
-          setSettleUpGroups(data || {});
+          setSettleUpGroups(data);
           setSettleUpResult("");
         })
         .catch((err) =>
@@ -223,10 +227,19 @@ export default function App() {
     (async () => {
       let found = null;
       for (const groupId of groupIds) {
-        const res = await fetch(
-          `https://settle-up-sandbox.firebaseio.com/groups/${groupId}.json?auth=${settleUpToken}`
-        );
-        const data = await res.json();
+        try {
+        const data = await fetchSettleUpGroup(settleUpToken, groupId);
+          if (
+            data &&
+            data.name &&
+            data.name.trim().toLowerCase() === "test group"
+          ) {
+            found = { groupId, ...data };
+            break;
+          }
+        } catch (err) {
+          setSettleUpResult("Error fetching group: " + err.message);
+        }
         if (
           data &&
           data.name &&
@@ -238,10 +251,7 @@ export default function App() {
       }
       if (!found && groupIds.length > 0) {
         const groupId = groupIds[0];
-        const res = await fetch(
-          `https://settle-up-sandbox.firebaseio.com/groups/${groupId}.json?auth=${settleUpToken}`
-        );
-        const data = await res.json();
+        const data = await fetchSettleUpGroup(settleUpToken, groupId);
         found = { groupId, ...data };
         setSettleUpResult(
           "No group named 'test group' found. Using your first group instead."
@@ -257,10 +267,7 @@ export default function App() {
   useEffect(() => {
     if (!settleUpTestGroup || !settleUpTestGroup.groupId || !settleUpToken)
       return;
-    fetch(
-      `https://settle-up-sandbox.firebaseio.com/members/${settleUpTestGroup.groupId}.json?auth=${settleUpToken}`
-    )
-      .then((res) => res.json())
+    fetchSettleUpMembers(settleUpToken, settleUpTestGroup.groupId)
       .then((data) => {
         if (data) {
           const arr = Object.entries(data).map(([id, m]) => ({ id, ...m }));
@@ -269,6 +276,9 @@ export default function App() {
           );
           setSettleUpPayerId(arr[0]?.id || "");
         }
+      })
+      .catch((err) => {
+        setSettleUpResult("Error fetching members: " + err.message);
       });
     setSettleUpCurrency(settleUpTestGroup?.convertedToCurrency || "EUR");
   }, [settleUpTestGroup, settleUpToken]);
@@ -279,9 +289,7 @@ export default function App() {
     // Debounce: only fetch after user stops typing for 500ms
     const handler = setTimeout(async () => {
       try {
-        const url = `https://settle-up-sandbox.firebaseio.com/transactions/${settleUpTestGroup.groupId}.json?auth=${settleUpToken}`;
-        const res = await fetch(url);
-        const data = await res.json();
+        const data = await fetchSettleUpTransactions(settleUpToken, settleUpTestGroup.groupId);
         if (!data) return;
         const transactions = Object.values(data);
         // Use shared utility with 'contains' match
@@ -416,15 +424,7 @@ export default function App() {
       receiptUrl: undefined,
     };
     try {
-      const url = `https://settle-up-sandbox.firebaseio.com/transactions/${settleUpTestGroup.groupId}.json?auth=${settleUpToken}`;
-      console.log('[SettleUp] Request:', tx);
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tx),
-      });
-      const data = await res.json();
-      console.log('[SettleUp] Response:', data);
+      const data = await addSettleUpTransaction(settleUpToken, settleUpTestGroup.groupId, tx);
       if (data && data.name) {
         setSettleUpResult("✅ SettleUp transaction sent!");
         setAmountMilliunits(0);

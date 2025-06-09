@@ -6,6 +6,15 @@ import Picker from '@emoji-mart/react'
 import { MdArrowDropDown } from "react-icons/md";
 import EmojiCategoryButton from "./EmojiCategoryButton";
 import { getMostCommonCategoryFromTransactions } from "../utils/settleupUtils";
+import {
+  fetchSettleUpUserGroups,
+  fetchSettleUpGroup,
+  fetchSettleUpMembers,
+  fetchSettleUpTransactions,
+  addSettleUpTransaction,
+  fetchSettleUpPermissions,
+  fetchSettleUpUserGroupNode
+} from "../api/settleup.js";
 
 export default function SettleUpApiTestForm({ result, setResult }) {
   const {
@@ -40,10 +49,7 @@ export default function SettleUpApiTestForm({ result, setResult }) {
     setLoading(true);
     setResult("Loading groups...");
     try {
-      const url = `https://settle-up-sandbox.firebaseio.com/userGroups/${userId}.json?auth=${token}`;
-      console.log('[SettleUp] Fetching userGroups:', url);
-      const res = await fetch(url);
-      const data = await res.json();
+      const data = await fetchSettleUpUserGroups(token, userId);
       console.log('[SettleUp] userGroups response:', data);
       setGroups(data || {});
       setResult(null);
@@ -66,14 +72,9 @@ export default function SettleUpApiTestForm({ result, setResult }) {
     setResult("Searching for group named 'test group'...");
     try {
       const groupIds = Object.keys(groups);
-      console.log('[SettleUp] groupIds:', groupIds);
       let found = null;
       for (const groupId of groupIds) {
-        const url = `https://settle-up-sandbox.firebaseio.com/groups/${groupId}.json?auth=${token}`;
-        console.log('[SettleUp] Fetching group:', url);
-        const res = await fetch(url);
-        const data = await res.json();
-        console.log('[SettleUp] group data:', data);
+        const data = await fetchSettleUpGroup(token, groupId);
         if (data && data.name && data.name.trim().toLowerCase() === "test group") {
           found = { groupId, ...data };
           break;
@@ -82,11 +83,7 @@ export default function SettleUpApiTestForm({ result, setResult }) {
       if (!found && groupIds.length > 0) {
         // Fallback: use first group
         const groupId = groupIds[0];
-        const url = `https://settle-up-sandbox.firebaseio.com/groups/${groupId}.json?auth=${token}`;
-        console.log('[SettleUp] Fallback fetching group:', url);
-        const res = await fetch(url);
-        const data = await res.json();
-        console.log('[SettleUp] fallback group data:', data);
+        const data = await fetchSettleUpGroup(token, groupId);
         found = { groupId, ...data };
         setResult("No group named 'test group' found. Using your first group instead.");
       } else {
@@ -101,28 +98,11 @@ export default function SettleUpApiTestForm({ result, setResult }) {
     }
   };
 
-  // Auto-load groups on mount if token/userId available
-  useEffect(() => {
-    console.log('SettleUpApiTestForm context:', { loadingToken, tokenError, token, userId });
-    if (!loadingToken && !tokenError && token && userId) {
-      handleListGroups();
-    }
-  }, [loadingToken, tokenError, token, userId]);
-
-  // When groups are loaded, find test group
-  useEffect(() => {
-    if (groups && token && userId) {
-      handleFindTestGroup();
-    }
-  }, [groups, token, userId]);
-
   // Fetch members when testGroup changes
   async function fetchMembers(groupId) {
     if (!token || !groupId) return;
     try {
-      const url = `https://settle-up-sandbox.firebaseio.com/members/${groupId}.json?auth=${token}`;
-      const res = await fetch(url);
-      const data = await res.json();
+      const data = await fetchSettleUpMembers(token, groupId);
       if (data) {
         const arr = Object.entries(data).map(([id, m]) => ({ id, ...m }));
         setMembers(arr);
@@ -153,10 +133,7 @@ export default function SettleUpApiTestForm({ result, setResult }) {
   async function checkWritePermission(groupId) {
     if (!token || !userId || !groupId) return;
     try {
-      const permUrl = `https://settle-up-sandbox.firebaseio.com/permissions/${groupId}.json?auth=${token}`;
-      const res = await fetch(permUrl);
-      const perms = await res.json();
-      console.log('[SettleUp] permissions for group:', perms);
+      const perms = await fetchSettleUpPermissions(token, groupId);
       if (!perms || !perms[userId] || (perms[userId].level !== 20 && perms[userId].level !== 30)) {
         setResult(
           <div className="text-red-700">
@@ -173,17 +150,14 @@ export default function SettleUpApiTestForm({ result, setResult }) {
     }
   }
 
-  // When testGroup is loaded, check write permission and membership
-  useEffect(() => {
-    async function checkMemberships() {
-      if (testGroup && testGroup.groupId && token && userId) {
-        await checkWritePermission(testGroup.groupId);
-        // Check if user is a member
-        const membersUrl = `https://settle-up-sandbox.firebaseio.com/members/${testGroup.groupId}.json?auth=${token}`;
-        const membersRes = await fetch(membersUrl);
-        const members = await membersRes.json();
+  // Check if user is a member of the group
+  async function checkMemberships() {
+    if (testGroup && testGroup.groupId && token && userId) {
+      await checkWritePermission(testGroup.groupId);
+      // Check if user is a member
+      try {
+        const members = await fetchSettleUpMembers(token, testGroup.groupId);
         const isMember = members && Object.values(members).some(m => m && m.active !== false && m.name && m.name.toLowerCase().includes('paul'));
-        console.log('[SettleUp] members for group:', members);
         if (!isMember) {
           setResult(
             <div className="text-red-700">
@@ -192,11 +166,8 @@ export default function SettleUpApiTestForm({ result, setResult }) {
             </div>
           );
         }
-        // Check if userGroup node exists
-        const userGroupUrl = `https://settle-up-sandbox.firebaseio.com/userGroups/${userId}/${testGroup.groupId}.json?auth=${token}`;
-        const userGroupRes = await fetch(userGroupUrl);
-        const userGroup = await userGroupRes.json();
-        console.log('[SettleUp] userGroup node:', userGroup);
+        // Check userGroup node
+        const userGroup = await fetchSettleUpUserGroupNode(token, userId, testGroup.groupId);
         if (!userGroup || Object.keys(userGroup).length === 0) {
           setResult(
             <div className="text-red-700">
@@ -205,8 +176,14 @@ export default function SettleUpApiTestForm({ result, setResult }) {
             </div>
           );
         }
+      } catch (e) {
+        setResult('Error checking memberships: ' + e.message);
       }
     }
+  }
+
+  // When testGroup is loaded, check write permission and membership
+  useEffect(() => {
     checkMemberships();
   }, [testGroup, token, userId]);
 
@@ -242,13 +219,7 @@ export default function SettleUpApiTestForm({ result, setResult }) {
     };
     console.log('[SettleUp] transaction payload:', tx);
     try {
-      const url = `https://settle-up-sandbox.firebaseio.com/transactions/${testGroup.groupId}.json?auth=${token}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tx)
-      });
-      const data = await res.json();
+      const data = await addSettleUpTransaction(token, testGroup.groupId, tx);
       if (data && data.name) {
         setResult(
           <div>
@@ -277,9 +248,7 @@ export default function SettleUpApiTestForm({ result, setResult }) {
     // Debounce: only fetch after user stops typing for 500ms
     const handler = setTimeout(async () => {
       try {
-        const url = `https://settle-up-sandbox.firebaseio.com/transactions/${testGroup.groupId}.json?auth=${token}`;
-        const res = await fetch(url);
-        const data = await res.json();
+        const data = await fetchSettleUpTransactions(token, testGroup.groupId);
         if (!data) {
           setAutofillLoading(false);
           return;
