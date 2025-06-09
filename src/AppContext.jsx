@@ -27,17 +27,52 @@ export function AppProvider({ children }) {
       setSettleUpLoading(true);
       setSettleUpError("");
       try {
-        const { token, userId } = await getSettleUpTokenFromEnv();
+        // Check for token in local storage
+        let token = localStorage.getItem("settleUp_token");
+        let userId = localStorage.getItem("settleUp_userId");
+
+        if (!token || !userId) {
+          if (import.meta.env.VITE_SETTLEUP_DUMMY === 'true') {
+              // Set default dummy token and user ID
+              token = "dummy_token_12345";
+              userId = "dummy_user_12345";
+          } else {
+            let result = { token, userId } = await getSettleUpTokenFromEnv();
+            token = result.token;
+            userId = result.userId;
+          }
+        }
+
+        localStorage.setItem("settleUp_token", token);
+        localStorage.setItem("settleUp_userId", userId);
         setSettleUpToken(token);
         setSettleUpUserId(userId);
+        console.log("[AppContext] Dummy Settle Up token and user ID used:", { token, userId });
       } catch (err) {
         setSettleUpError("Settle Up token error: " + err.message);
+        console.error("[AppContext] Error retrieving Settle Up token:", err);
       } finally {
         setSettleUpLoading(false);
       }
     }
     loadToken();
   }, []);
+
+  // --- Auth logic using Settle Up token ---
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  useEffect(() => {
+    // Set isLoggedIn to true if Settle Up token and user ID are present
+    const loggedIn = !!settleUpToken && !!settleUpUserId;
+    setIsLoggedIn(loggedIn);
+    console.log("[AppContext] isLoggedIn recalculated:", loggedIn, { settleUpToken, settleUpUserId });
+  }, [settleUpToken, settleUpUserId]);
+
+  const logout = () => {
+    setSettleUpToken("");
+    setSettleUpUserId("");
+    setIsLoggedIn(false);
+    console.log("[AppContext] logout called, Settle Up token/user ID cleared");
+  };
 
   const contextValue = useMemo(() => ({
     // YNAB
@@ -53,7 +88,10 @@ export function AppProvider({ children }) {
     setSettleUpUserId,
     settleUpLoading,
     settleUpError,
-  }), [ynabToken, ynabAPI, budgetId, settleUpToken, settleUpUserId, settleUpLoading, settleUpError]);
+    // Auth
+    isLoggedIn,
+    logout,
+  }), [ynabToken, ynabAPI, budgetId, settleUpToken, settleUpUserId, settleUpLoading, settleUpError, isLoggedIn]);
 
   return (
     <AppContext.Provider value={contextValue}>

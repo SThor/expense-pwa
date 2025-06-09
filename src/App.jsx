@@ -12,6 +12,7 @@ import DetailsSection from "./components/DetailsSection";
 import ReviewSection from "./components/ReviewSection";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import "./index.css";
+import { useNavigate } from "react-router-dom";
 import {
   fetchSettleUpUserGroups,
   fetchSettleUpGroup,
@@ -42,6 +43,7 @@ export default function App() {
   const [suggestedCategoryIds, setSuggestedCategoryIds] = useState([]);
   const [payeeLocations, setPayeeLocations] = useState([]);
   const userPosition = useGeolocation();
+  const navigate = useNavigate();
 
   // SettleUp integration state
   const { settleUpToken, settleUpUserId, settleUpLoading, settleUpError } =
@@ -228,7 +230,7 @@ export default function App() {
       let found = null;
       for (const groupId of groupIds) {
         try {
-        const data = await fetchSettleUpGroup(settleUpToken, groupId);
+          const data = await fetchSettleUpGroup(settleUpToken, groupId);
           if (
             data &&
             data.name &&
@@ -439,23 +441,17 @@ export default function App() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    // Format for display (for alert only)
-    const sign = amountMilliunits < 0 ? "-" : "+";
-    const absMilli = Math.abs(amountMilliunits);
-    alert(
-      `Would submit: ${sign}${absMilli} milli€ "${description}" to: ${[
-        target.ynab && "YNAB",
-        target.settleup && "SettleUp",
-      ]
-        .filter(Boolean)
-        .join(", ")}`
-    );
-    if (target.ynab) {
-      handleYnabSubmit();
-    }
-    if (target.settleup) {
-      handleSettleUpSubmit();
-    }
+    const formState = {
+      amountMilliunits,
+      swileMilliunits,
+      payee,
+      category,
+      description,
+      target,
+      account,
+      settleUpCategory,
+    };
+    navigate("/review", { state: { formState } });
   }
 
   // Reset swileMilliunits to default when toggles change
@@ -490,107 +486,96 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
-      <div className="bg-white shadow rounded p-8 w-full max-w-md mb-10">
-        <h1 className="text-2xl font-bold mb-4 text-sky-700">
-          Quick Expense Entry
-        </h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <AppToggles target={target} setTarget={setTarget} />
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <AppToggles target={target} setTarget={setTarget} />
+      <TransitionGroup component={null}>
+        <CSSTransition key="amount" timeout={300} classNames="fade-slide" nodeRef={amountRef}>
+          <AmountSection ref={amountRef} amountMilliunits={amountMilliunits} setAmountMilliunits={setAmountMilliunits} />
+        </CSSTransition>
 
-          <TransitionGroup component={null}>
-            <CSSTransition key="amount" timeout={300} classNames="fade-slide" nodeRef={amountRef}>
-              <AmountSection ref={amountRef} amountMilliunits={amountMilliunits} setAmountMilliunits={setAmountMilliunits} />
-            </CSSTransition>
+        {showAccounts && (
+          <CSSTransition key="accounts" timeout={300} classNames="fade-slide" nodeRef={accountsRef}>
+            <AccountToggles ref={accountsRef} account={account} setAccount={setAccount} />
+          </CSSTransition>
+        )}
 
-            {showAccounts && (
-              <CSSTransition key="accounts" timeout={300} classNames="fade-slide" nodeRef={accountsRef}>
-                <AccountToggles ref={accountsRef} account={account} setAccount={setAccount} />
-              </CSSTransition>
-            )}
+        {showSwile && (
+          <CSSTransition key="swile" timeout={300} classNames="fade-slide" nodeRef={swileRef}>
+            <SwileAmountSection ref={swileRef} swileMilliunits={swileMilliunits} setSwileMilliunits={setSwileMilliunits} max={amountMilliunits} />
+          </CSSTransition>
+        )}
 
-            {showSwile && (
-              <CSSTransition key="swile" timeout={300} classNames="fade-slide" nodeRef={swileRef}>
-                <SwileAmountSection ref={swileRef} swileMilliunits={swileMilliunits} setSwileMilliunits={setSwileMilliunits} max={amountMilliunits} />
-              </CSSTransition>
-            )}
+        {showDetails && (
+          <CSSTransition key="details" timeout={300} classNames="fade-slide" nodeRef={detailsRef}>
+            <DetailsSection
+              ref={detailsRef}
+              payee={payee}
+              setPayee={setPayee}
+              payeeId={payeeId}
+              setPayeeId={setPayeeId}
+              groupedPayees={groupedPayees}
+              settleUpCategory={settleUpCategory}
+              setSettleUpCategory={setSettleUpCategory}
+              DEFAULT_SETTLEUP_CATEGORY={DEFAULT_SETTLEUP_CATEGORY}
+              suggestedCategoryIds={suggestedCategoryIds}
+              categories={categories}
+              categoryGroups={categoryGroups}
+              category={category}
+              setCategory={setCategory}
+              categoryId={categoryId}
+              setCategoryId={setCategoryId}
+              groupedCategories={groupedCategories}
+              handleCategoryChange={handleCategoryChange}
+              description={description}
+              setDescription={setDescription}
+            />
+          </CSSTransition>
+        )}
 
-            {showDetails && (
-              <CSSTransition key="details" timeout={300} classNames="fade-slide" nodeRef={detailsRef}>
-                <DetailsSection
-                  ref={detailsRef}
-                  payee={payee}
-                  setPayee={setPayee}
-                  payeeId={payeeId}
-                  setPayeeId={setPayeeId}
-                  groupedPayees={groupedPayees}
-                  settleUpCategory={settleUpCategory}
-                  setSettleUpCategory={setSettleUpCategory}
-                  DEFAULT_SETTLEUP_CATEGORY={DEFAULT_SETTLEUP_CATEGORY}
-                  suggestedCategoryIds={suggestedCategoryIds}
-                  categories={categories}
-                  categoryGroups={categoryGroups}
-                  category={category}
-                  setCategory={setCategory}
-                  categoryId={categoryId}
-                  setCategoryId={setCategoryId}
-                  groupedCategories={groupedCategories}
-                  handleCategoryChange={handleCategoryChange}
-                  description={description}
-                  setDescription={setDescription}
-                />
-              </CSSTransition>
-            )}
-
-            {showReview && (
-              <CSSTransition key="review" timeout={300} classNames="fade-slide" nodeRef={reviewRef}>
-                <ReviewSection
-                  ref={reviewRef}
-                  amountMilliunits={amountMilliunits}
-                  swileMilliunits={swileMilliunits}
-                  payee={payee}
-                  category={category}
-                  description={description}
-                  target={target}
-                  account={account}
-                  settleUpCategory={settleUpCategory}
-                />
-              </CSSTransition>
-            )}
-          </TransitionGroup>
-
-          {settleUpResult && (
-            <div
-              className="text-sm mt-2"
-              style={{
-                color: settleUpResult.startsWith("✅") ? "green" : "red",
-              }}
-            >
-              {settleUpResult}
-            </div>
-          )}
-          <button
-            className={`bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full ${
-              (!target.ynab && !target.settleup) || (target.ynab && !account.bourso && !account.swile)
-                ? ' opacity-50 cursor-not-allowed' : ''
-            }`}
-            type="submit"
-            disabled={
-              (!target.ynab && !target.settleup) ||
-              (target.ynab && !account.bourso && !account.swile)
-            }
-            title={
-              !target.ynab && !target.settleup
-                ? 'Enable YNAB and/or SettleUp to add a transaction.'
-                : target.ynab && !account.bourso && !account.swile
-                ? 'Enable either BoursoBank or Swile account to add a YNAB transaction.'
-                : undefined
-            }
-          >
-            Add Transaction
-          </button>
-        </form>
-      </div>
-    </div>
+        {showReview && (
+          <CSSTransition key="review" timeout={300} classNames="fade-slide" nodeRef={reviewRef}>
+            <ReviewSection
+              ref={reviewRef}
+              amountMilliunits={amountMilliunits}
+              swileMilliunits={swileMilliunits}
+              payee={payee}
+              category={category}
+              description={description}
+              target={target}
+              account={account}
+              settleUpCategory={settleUpCategory}
+            />
+          </CSSTransition>
+        )}
+      </TransitionGroup>
+      {settleUpResult && (
+        <div
+          className="text-sm mt-2"
+          style={{ color: settleUpResult.startsWith("✅") ? "green" : "red" }}
+        >
+          {settleUpResult}
+        </div>
+      )}
+      <button
+        className={`bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full ${
+          (!target.ynab && !target.settleup) || (target.ynab && !account.bourso && !account.swile)
+            ? ' opacity-50 cursor-not-allowed' : ''
+        }`}
+        type="submit"
+        disabled={
+          (!target.ynab && !target.settleup) ||
+          (target.ynab && !account.bourso && !account.swile)
+        }
+        title={
+          !target.ynab && !target.settleup
+            ? 'Enable YNAB and/or SettleUp to add a transaction.'
+            : target.ynab && !account.bourso && !account.swile
+            ? 'Enable either BoursoBank or Swile account to add a YNAB transaction.'
+            : undefined
+        }
+      >
+        Add Transaction
+      </button>
+    </form>
   );
 }
