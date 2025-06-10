@@ -32,6 +32,7 @@ function RouterApp() {
   // Form state for review page (lifted up)
   const [formState, setFormState] = React.useState(null);
   const [result, setResult] = React.useState(""); // generic result
+  const [canReview, setCanReview] = React.useState(false);
 
   return (
     <Routes>
@@ -39,20 +40,30 @@ function RouterApp() {
       <Route path="/dev" element={<DevApp />} />
       <Route path="/review" element={
         <RequireAuth>
-          <ReviewPage
-            formState={formState}
-            onBack={() => window.history.back()}
-            onSubmit={() => {
-              // You can trigger the actual submit logic here or via context
-              setResult("Submitted!");
-            }}
-            result={result}
-          />
+          {canReview ? (
+            <ReviewPage
+              formState={formState}
+              onBack={() => window.history.back()}
+              onSubmit={() => {
+                setResult("Submitted!");
+                setCanReview(false); // Reset after review
+              }}
+              result={result}
+            />
+          ) : (
+            <Navigate to="/" replace />
+          )}
         </RequireAuth>
       } />
       <Route path="/" element={
         <RequireAuth>
-          <MainFormPage />
+          <MainFormPage
+            onSubmit={data => {
+              setFormState(data);
+              setCanReview(true);
+              navigate("/review");
+            }}
+          />
         </RequireAuth>
       } />
       <Route path="*" element={<NotFoundPage />} />
