@@ -10,11 +10,10 @@ import NotFoundPage from "./NotFoundPage";
 import './index.css'
 
 function RequireAuth({ children }) {
-  const { isLoggedIn, login } = useAppContext();
-  const location = useLocation();
-  console.log("[RequireAuth] isLoggedIn:", isLoggedIn, "location:", location);
+  const { isLoggedIn } = useAppContext();
+  console.log("[RequireAuth] isLoggedIn:", isLoggedIn);
   if (!isLoggedIn) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" replace />;
   }
   return children;
 }

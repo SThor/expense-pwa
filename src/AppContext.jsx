@@ -37,9 +37,7 @@ export function AppProvider({ children }) {
               token = "dummy_token_12345";
               userId = "dummy_user_12345";
           } else {
-            let result = { token, userId } = await getSettleUpTokenFromEnv();
-            token = result.token;
-            userId = result.userId;
+            ({ token, userId } = await getSettleUpTokenFromEnv());
           }
         }
 
