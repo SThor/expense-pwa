@@ -69,6 +69,8 @@ export function AppProvider({ children }) {
     setSettleUpToken("");
     setSettleUpUserId("");
     setIsLoggedIn(false);
+    localStorage.removeItem("settleUp_token");
+    localStorage.removeItem("settleUp_userId");
     console.log("[AppContext] logout called, Settle Up token/user ID cleared");
   };
 
