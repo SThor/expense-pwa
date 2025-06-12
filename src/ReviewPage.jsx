@@ -9,7 +9,7 @@ import { useState } from "react";
 export default function ReviewPage({
   formState,
   onBack,
-  onSubmit,
+  onSubmitted,
 }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -148,7 +148,7 @@ export default function ReviewPage({
   async function handleSubmit() {
     if (formState.target.ynab) await handleYnabSubmit();
     if (formState.target.settleup) await handleSettleUpSubmit();
-    if (onSubmit) onSubmit();
+    if (onSubmitted) onSubmitted();
   }
 
   return (

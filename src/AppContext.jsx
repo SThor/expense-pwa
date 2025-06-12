@@ -10,6 +10,7 @@ export function AppProvider({ children }) {
   const defaultBudgetId = localStorage.getItem("ynab_budget_id") || "";
   const [ynabToken, setYnabToken] = useState(defaultYnabToken);
   const [budgetId, setBudgetId] = useState(defaultBudgetId);
+  const [accounts, setAccounts] = useState([]);
   const ynabAPI = useMemo(() => (ynabToken ? new ynab.API(ynabToken) : null), [ynabToken]);
   const setBudgetIdPersist = (id) => {
     setBudgetId(id);
@@ -81,6 +82,8 @@ export function AppProvider({ children }) {
     ynabAPI,
     budgetId,
     setBudgetId: setBudgetIdPersist,
+    accounts,
+    setAccounts,
     // Settle Up
     settleUpToken,
     setSettleUpToken,
@@ -91,7 +94,7 @@ export function AppProvider({ children }) {
     // Auth
     isLoggedIn,
     logout,
-  }), [ynabToken, ynabAPI, budgetId, settleUpToken, settleUpUserId, settleUpLoading, settleUpError, isLoggedIn]);
+  }), [ynabToken, ynabAPI, budgetId, accounts, settleUpToken, settleUpUserId, settleUpLoading, settleUpError, isLoggedIn]);
 
   return (
     <AppContext.Provider value={contextValue}>

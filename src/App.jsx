@@ -23,8 +23,7 @@ import {
 } from "./constants";
 
 export default function App({ onSubmit, formState, setFormState }) {
-  const { ynabAPI, budgetId } = useAppContext();
-  const [accounts, setAccounts] = useState([]);
+  const { ynabAPI, budgetId, setAccounts } = useAppContext();
   const [payees, setPayees] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoryGroups, setCategoryGroups] = useState([]);

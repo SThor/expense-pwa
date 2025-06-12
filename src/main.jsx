@@ -4,7 +4,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 import { AppProvider, useAppContext } from "./AppContext";
 import LoginPage from "./LoginPage";
 import MainFormPage from "./MainFormPage";
-import ReviewPage from "./ReviewPage";
 import DevApp from "./DevApp";
 import NotFoundPage from "./NotFoundPage";
 import { DEFAULT_SETTLEUP_CATEGORY, DEFAULT_SWILE_MILLIUNITS } from "./constants";
@@ -48,38 +47,18 @@ function RouterApp() {
       navigate("/", { replace: true });
     }
   }, [isLoggedIn, location.pathname]);
-  const [result, setResult] = useState(""); // generic result
-  const [canReview, setCanReview] = useState(false);
 
   return (
     <Routes>
       <Route path="/login" element={<LoginPage onLogin={login} />} />
       <Route path="/dev" element={<DevApp />} />
-      <Route path="/review" element={
-        <RequireAuth>
-          {canReview ? (
-            <ReviewPage
-              formState={formState}
-              onBack={() => navigate("/")}
-              onSubmit={() => {
-                setResult("Submitted!");
-                setCanReview(false);
-              }}
-              result={result}
-            />
-          ) : (
-            <Navigate to="/" replace />
-          )}
-        </RequireAuth>
-      } />
       <Route path="/" element={
         <RequireAuth>
           <MainFormPage
             formState={formState}
             setFormState={setFormState}
             onSubmit={() => {
-              setCanReview(true);
-              navigate("/review", { replace: true });
+              setFormState((prevState) => ({ ...prevState, canReview: true }));
             }}
           />
         </RequireAuth>

@@ -1,12 +1,23 @@
-import React from "react";
+import {useState} from "react";
 import { useAppContext } from "./AppContext";
 import App from "./App";
 import CenteredCardLayout from "./components/CenteredCardLayout";
+import ReviewPage from "./ReviewPage";
 
 export default function MainFormPage({ formState, setFormState, onSubmit }) {
   const { logout } = useAppContext();
+  const [showReview, setShowReview] = useState(false);
+  const [result, setResult] = useState(""); // generic result
   return (
-    <CenteredCardLayout>
+    showReview ? (
+      <ReviewPage
+        formState={formState}
+        onBack={() => setShowReview(false)}
+        onSubmitted={() => setShowReview(false)}
+        result={result}
+      />
+    ) : (
+      <CenteredCardLayout>
       <div className="flex justify-between mb-4">
         <span /> {/* Stretch to fill space */}
         <button
@@ -17,10 +28,11 @@ export default function MainFormPage({ formState, setFormState, onSubmit }) {
         </button>
       </div>
       <App
-        onSubmit={onSubmit}
+        onSubmit={() => setShowReview(true)}
         formState={formState}
         setFormState={setFormState}
       />
     </CenteredCardLayout>
+    )   
   );
 }
