@@ -9,14 +9,14 @@ export default function AppToggles({ target, setTarget }) {
         color="#5C6CFA"
         label="YNAB"
         icon="/ynab-icon.png"
-        onClick={() => setTarget((t) => ({ ...t, ynab: !t.ynab }))}
+        onClick={() => setTarget({ ...target, ynab: !target.ynab })}
       />
       <ToggleButton
         active={target.settleup}
         color="#f2774a"
         label="SettleUp"
         icon="/settleup-icon.png"
-        onClick={() => setTarget((t) => ({ ...t, settleup: !t.settleup }))}
+        onClick={() => setTarget({ ...target, settleup: !target.settleup })}
       />
     </div>
   );
