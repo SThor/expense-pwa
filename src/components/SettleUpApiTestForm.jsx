@@ -15,6 +15,7 @@ import {
   fetchSettleUpPermissions,
   fetchSettleUpUserGroupNode
 } from "../api/settleup.js";
+import { DEFAULT_CURRENCY, DEBOUNCE_AUTOFILL, TEST_GROUP_NAME } from "../constants";
 
 export default function SettleUpApiTestForm({ result, setResult }) {
   const {
@@ -75,7 +76,7 @@ export default function SettleUpApiTestForm({ result, setResult }) {
       let found = null;
       for (const groupId of groupIds) {
         const data = await fetchSettleUpGroup(token, groupId);
-        if (data && data.name && data.name.trim().toLowerCase() === "test group") {
+        if (data && data.name && data.name.trim().toLowerCase() === TEST_GROUP_NAME) {
           found = { groupId, ...data };
           break;
         }
@@ -116,7 +117,7 @@ export default function SettleUpApiTestForm({ result, setResult }) {
   }
   // Fetch group currency when testGroup changes
   function updateCurrency(group) {
-    setCurrency(group?.convertedToCurrency || "EUR");
+    setCurrency(group?.convertedToCurrency || DEFAULT_CURRENCY);
   }
   // React to testGroup
   useEffect(() => {
@@ -245,7 +246,7 @@ export default function SettleUpApiTestForm({ result, setResult }) {
     if (!desc || !testGroup?.groupId || !token) return;
     setAutofillLoading(true);
     setAutofilledCategory("");
-    // Debounce: only fetch after user stops typing for 500ms
+    // Debounce: only fetch after user stops typing for DEBOUNCE_AUTOFILL ms
     const handler = setTimeout(async () => {
       try {
         const data = await fetchSettleUpTransactions(token, testGroup.groupId);
@@ -266,7 +267,7 @@ export default function SettleUpApiTestForm({ result, setResult }) {
       } catch (e) {
         setAutofillLoading(false);
       }
-    }, 500);
+    }, DEBOUNCE_AUTOFILL);
     return () => clearTimeout(handler);
   }, [desc, testGroup?.groupId, token]);
 

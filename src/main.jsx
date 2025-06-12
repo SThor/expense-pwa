@@ -1,4 +1,4 @@
-import React from 'react'
+import { useState, useEffect, StrictMode} from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AppProvider, useAppContext } from "./AppContext";
@@ -7,11 +7,11 @@ import MainFormPage from "./MainFormPage";
 import ReviewPage from "./ReviewPage";
 import DevApp from "./DevApp";
 import NotFoundPage from "./NotFoundPage";
+import { DEFAULT_SETTLEUP_CATEGORY, DEFAULT_SWILE_MILLIUNITS } from "./constants";
 import './index.css'
 
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAppContext();
-  console.log("[RequireAuth] isLoggedIn:", isLoggedIn);
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
   }
@@ -22,17 +22,34 @@ function RouterApp() {
   const { isLoggedIn, login } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
-  React.useEffect(() => {
+  // Default form state for all shared fields
+  const DEFAULT_FORM_STATE = {
+    amountMilliunits: 0,
+    description: "",
+    target: { ynab: true, settleup: false },
+    account: { bourso: false, swile: false },
+    payee: "",
+    payeeId: "",
+    category: "",
+    categoryId: "",
+    settleUpCategory: DEFAULT_SETTLEUP_CATEGORY,
+    settleUpGroups: null,
+    settleUpTestGroup: null,
+    settleUpPayerId: "",
+    settleUpForWhomIds: [],
+    settleUpCurrency: "",
+    swileMilliunits: DEFAULT_SWILE_MILLIUNITS,
+  };
+  const [formState, setFormState] = useState(DEFAULT_FORM_STATE);
+  useEffect(() => {
     // If logged in and on /login, redirect to /
     if (isLoggedIn && location.pathname === "/login") {
       console.log("[RouterApp] Auto-redirecting to / after login");
       navigate("/", { replace: true });
     }
   }, [isLoggedIn, location.pathname]);
-  // Form state for review page (lifted up)
-  const [formState, setFormState] = React.useState(null);
-  const [result, setResult] = React.useState(""); // generic result
-  const [canReview, setCanReview] = React.useState(false);
+  const [result, setResult] = useState(""); // generic result
+  const [canReview, setCanReview] = useState(false);
 
   return (
     <Routes>
@@ -43,10 +60,10 @@ function RouterApp() {
           {canReview ? (
             <ReviewPage
               formState={formState}
-              onBack={() => window.history.back()}
+              onBack={() => navigate("/")}
               onSubmit={() => {
                 setResult("Submitted!");
-                setCanReview(false); // Reset after review
+                setCanReview(false);
               }}
               result={result}
             />
@@ -58,10 +75,11 @@ function RouterApp() {
       <Route path="/" element={
         <RequireAuth>
           <MainFormPage
-            onSubmit={data => {
-              setFormState(data);
+            formState={formState}
+            setFormState={setFormState}
+            onSubmit={() => {
               setCanReview(true);
-              navigate("/review");
+              navigate("/review", { replace: true });
             }}
           />
         </RequireAuth>
@@ -72,11 +90,11 @@ function RouterApp() {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  <StrictMode>
     <AppProvider>
       <BrowserRouter>
         <RouterApp />
       </BrowserRouter>
     </AppProvider>
-  </React.StrictMode>
+  </StrictMode>
 )

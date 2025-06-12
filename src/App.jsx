@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getAccountIdByName } from "./utils/ynabUtils";
 import { useAppContext } from "./AppContext";
 import { getMostCommonCategoryFromTransactions } from "./utils/settleupUtils";
 import { getClosestLocation } from "./utils/ynabUtils";
@@ -9,58 +8,39 @@ import AccountToggles from "./components/AccountToggles";
 import AmountSection from "./components/AmountSection";
 import SwileAmountSection from "./components/SwileAmountSection";
 import DetailsSection from "./components/DetailsSection";
-import ReviewSection from "./components/ReviewSection";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import "./index.css";
-import { useNavigate } from "react-router-dom";
 import {
   fetchSettleUpUserGroups,
   fetchSettleUpGroup,
   fetchSettleUpMembers,
   fetchSettleUpTransactions,
-  addSettleUpTransaction
 } from "./api/settleup.js";
+import {
+  DEFAULT_SETTLEUP_CATEGORY,
+  DEFAULT_SWILE_MILLIUNITS,
+  DEBOUNCE_AUTOFILL,
+} from "./constants";
 
-// Default value for SettleUp emoji category
-const DEFAULT_SETTLEUP_CATEGORY = "∅";
-// Default Swile paid amount (in milliunits, -25€)
-const DEFAULT_SWILE_MILLIUNITS = -25000;
-
-export default function App() {
-  const [amountMilliunits, setAmountMilliunits] = useState(0); // YNAB format
-  const [description, setDescription] = useState("");
-  const [target, setTarget] = useState({ ynab: true, settleup: false });
-  const [account, setAccount] = useState({ bourso: false, swile: false });
+export default function App({ onSubmit, formState, setFormState }) {
   const { ynabAPI, budgetId } = useAppContext();
   const [accounts, setAccounts] = useState([]);
   const [payees, setPayees] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoryGroups, setCategoryGroups] = useState([]);
-  const [payee, setPayee] = useState("");
-  const [payeeId, setPayeeId] = useState("");
-  const [category, setCategory] = useState("");
-  const [categoryId, setCategoryId] = useState("");
   const [suggestedCategoryIds, setSuggestedCategoryIds] = useState([]);
   const [payeeLocations, setPayeeLocations] = useState([]);
   const userPosition = useGeolocation();
-  const navigate = useNavigate();
 
   // SettleUp integration state
-  const { settleUpToken, settleUpUserId, settleUpLoading, settleUpError } =
-    useAppContext();
-  const [settleUpCategory, setSettleUpCategory] = useState(DEFAULT_SETTLEUP_CATEGORY);
+  const { settleUpToken, settleUpUserId, settleUpLoading, settleUpError } = useAppContext();
   const [settleUpGroups, setSettleUpGroups] = useState(null);
   const [settleUpTestGroup, setSettleUpTestGroup] = useState(null);
-  const [settleUpPayerId, setSettleUpPayerId] = useState("");
-  const [settleUpForWhomIds, setSettleUpForWhomIds] = useState([]);
-  const [settleUpCurrency, setSettleUpCurrency] = useState("");
   const [settleUpResult, setSettleUpResult] = useState("");
-  const [swileMilliunits, setSwileMilliunits] = useState(DEFAULT_SWILE_MILLIUNITS); // 25€ default
 
   // Section reveal state
   const [showAccounts, setShowAccounts] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [showReview, setShowReview] = useState(false);
   const [showSwile, setShowSwile] = useState(false);
 
   // Section refs for CSSTransition to avoid findDOMNode warning
@@ -68,7 +48,6 @@ export default function App() {
   const accountsRef = useRef(null);
   const swileRef = useRef(null);
   const detailsRef = useRef(null);
-  const reviewRef = useRef(null);
 
   // Fetch accounts, payees, and categories dynamically when budgetId or ynabAPI changes
   useEffect(() => {
@@ -91,12 +70,12 @@ export default function App() {
 
   // When payeeId changes, fetch their transactions and suggest categories
   useEffect(() => {
-    if (!ynabAPI || !payeeId || !budgetId) {
+    if (!ynabAPI || !formState.payeeId || !budgetId) {
       setSuggestedCategoryIds([]);
       return;
     }
     ynabAPI.transactions
-      .getTransactionsByPayee(budgetId, payeeId)
+      .getTransactionsByPayee(budgetId, formState.payeeId)
       .then((res) => {
         const transactions = res.data.transactions;
         const counts = {};
@@ -111,7 +90,7 @@ export default function App() {
           .map(([catId]) => catId);
         setSuggestedCategoryIds(sorted);
       });
-  }, [ynabAPI, payeeId, budgetId]);
+  }, [ynabAPI, formState.payeeId, budgetId]);
 
   // Fetch payee locations after payees are loaded
   useEffect(() => {
@@ -186,25 +165,32 @@ export default function App() {
     }))
     .filter((group) => group.items.length > 0);
 
-  // Handlers for payee/category selection
+  // Handlers for payee/category selection (update lifted state)
   const handlePayeeChange = (val, item) => {
-    setPayee(val);
-    setPayeeId(item && item.value ? item.value : "");
+    setFormState({
+      ...formState,
+      payee: val,
+      payeeId: item && item.value ? item.value : ""
+    });
   };
   const handleCategoryChange = (val, item) => {
-    setCategory(val);
-    setCategoryId(item && item.value ? item.value : "");
-    // If SettleUp emoji is unset and YNAB category starts with emoji, set it
+    let newSettleUpCategory = formState.settleUpCategory;
     if (
-      settleUpCategory === DEFAULT_SETTLEUP_CATEGORY &&
+      newSettleUpCategory === DEFAULT_SETTLEUP_CATEGORY &&
       item && item.label
     ) {
       // Regex to match emoji at the start
       const emojiMatch = item.label.match(/^\p{Emoji}/u);
       if (emojiMatch) {
-        setSettleUpCategory(emojiMatch[0]);
+        newSettleUpCategory = emojiMatch[0];
       }
     }
+    setFormState({
+      ...formState,
+      category: val,
+      categoryId: item && item.value ? item.value : "",
+      settleUpCategory: newSettleUpCategory
+    });
   };
 
   // Fetch SettleUp groups on mount if token/userId available
@@ -273,203 +259,56 @@ export default function App() {
       .then((data) => {
         if (data) {
           const arr = Object.entries(data).map(([id, m]) => ({ id, ...m }));
-          setSettleUpForWhomIds(
-            arr.filter((m) => m.active !== false).map((m) => m.id)
-          );
-          setSettleUpPayerId(arr[0]?.id || "");
+          setFormState((prev) => ({
+            ...prev,
+            settleUpForWhomIds: arr.filter((m) => m.active !== false).map((m) => m.id),
+            settleUpPayerId: arr[0]?.id || ""
+          }));
         }
       })
       .catch((err) => {
         setSettleUpResult("Error fetching members: " + err.message);
       });
-    setSettleUpCurrency(settleUpTestGroup?.convertedToCurrency || "EUR");
+    setFormState((prev) => ({
+      ...prev,
+      settleUpCurrency: settleUpTestGroup?.convertedToCurrency || DEFAULT_CURRENCY
+    }));
   }, [settleUpTestGroup, settleUpToken]);
 
   // Autofill SettleUp category (emoji) based on previous transactions with same payee/description
   useEffect(() => {
-    if (!payee || !settleUpTestGroup?.groupId || !settleUpToken) return;
-    // Debounce: only fetch after user stops typing for 500ms
+    if (!formState.payee || !settleUpTestGroup?.groupId || !settleUpToken) return;
+    // Debounce: only fetch after user stops typing for DEBOUNCE_AUTOFILL ms
     const handler = setTimeout(async () => {
       try {
         const data = await fetchSettleUpTransactions(settleUpToken, settleUpTestGroup.groupId);
         if (!data) return;
         const transactions = Object.values(data);
         // Use shared utility with 'contains' match
-        const mostCommon = getMostCommonCategoryFromTransactions(transactions, payee, 'purpose', 'contains');
+        const mostCommon = getMostCommonCategoryFromTransactions(transactions, formState.payee, 'purpose', 'contains');
         if (mostCommon) {
           setSettleUpCategory(mostCommon);
         }
       } catch (e) {
         // ignore autofill errors
       }
-    }, 500);
+    }, DEBOUNCE_AUTOFILL);
     return () => clearTimeout(handler);
-  }, [payee, settleUpTestGroup?.groupId, settleUpToken]);
-
-  // --- YNAB transaction submit logic ---
-  async function handleYnabSubmit() {
-    if (!ynabAPI || !budgetId) return;
-    // Split transaction logic
-    if (account.swile && account.bourso) {
-      // Swile account is the main account for the split
-      const swileAccountId = getAccountIdByName(accounts, "Swile");
-      const boursoAccountId = getAccountIdByName(accounts, "Boursorama");
-      if (!swileAccountId || !boursoAccountId) {
-        alert("No matching YNAB account found for Swile or Bourso.");
-        return;
-      }
-      // Calculate transfer inflow for Bourso (should be positive)
-      const transferInflowMilliunits = swileMilliunits - amountMilliunits; // This will be positive if swileMilliunits > amountMilliunits
-      // Compose split transaction
-      const boursoTransferPayeeId = "eabe1e60-fa92-40f7-8636-5c8bcbf1404a"; // Transfer : Boursorama
-      const transaction = {
-        account_id: swileAccountId,
-        date: new Date().toISOString().slice(0, 10),
-        amount: swileMilliunits, // Parent amount must equal sum of subtransactions
-        payee_id: payeeId || null, // User's payee for the main outflow
-        payee_name: !payeeId ? payee : undefined,
-        category_id: null, // Split transactions must not have a category at the parent level
-        memo: description,
-        approved: true,
-        subtransactions: [
-          {
-            amount: amountMilliunits, // Outflow (total spent, negative)
-            category_id: categoryId,
-            memo: description,
-            payee_id: payeeId || null, // User's payee for the main outflow
-          },
-          {
-            amount: transferInflowMilliunits, // Inflow (transfer from Bourso, positive)
-            payee_id: boursoTransferPayeeId, // Use the transfer payee id for Boursorama
-            transfer_account_id: boursoAccountId, // This will use the transfer payee for Bourso
-            memo: "Bourso completion",
-          },
-        ],
-      };
-      try {
-        console.log('[YNAB] Split Request:', transaction);
-        const res = await ynabAPI.transactions.createTransaction(budgetId, { transaction });
-        console.log('[YNAB] Split Response:', res);
-        setSettleUpResult('✅ YNAB split transaction sent!');
-        setAmountMilliunits(0);
-        setDescription("");
-        setSwileMilliunits(DEFAULT_SWILE_MILLIUNITS);
-      } catch (err) {
-        console.error('[YNAB] API error:', err);
-        setSettleUpResult('YNAB API error: ' + (err?.message || err));
-      }
-      return;
-    }
-    // ...existing code for single-account transaction...
-    let accountId = null;
-    if (account.bourso)
-      accountId = getAccountIdByName(accounts, "Boursorama");
-    else if (account.swile) accountId = getAccountIdByName(accounts, "Swile");
-    else accountId = getAccountIdByName(accounts, "Boursorama"); // fallback
-    if (!accountId) {
-      alert("No matching YNAB account found for the selected button.");
-      return;
-    }
-    const transaction = {
-      account_id: accountId,
-      date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
-      amount: amountMilliunits, // already in milliunits
-      payee_id: payeeId || null,
-      payee_name: !payeeId ? payee : undefined,
-      category_id: categoryId,
-      memo: description,
-      approved: true,
-    };
-    try {
-      console.log('[YNAB] Request:', transaction);
-      const res = await ynabAPI.transactions.createTransaction(budgetId, { transaction });
-      console.log('[YNAB] Response:', res);
-      setSettleUpResult('✅ YNAB transaction sent!');
-      setAmountMilliunits(0);
-      setDescription("");
-    } catch (err) {
-      console.error('[YNAB] API error:', err);
-      setSettleUpResult('YNAB API error: ' + (err?.message || err));
-    }
-  }
-
-  // --- SettleUp transaction submit logic ---
-  async function handleSettleUpSubmit() {
-    setSettleUpResult("");
-    if (
-      !settleUpToken ||
-      !settleUpTestGroup?.groupId ||
-      amountMilliunits === 0 ||
-      !settleUpPayerId ||
-      settleUpForWhomIds.length === 0
-    ) {
-      setSettleUpResult("❌ Please fill all required fields before submitting.");
-      return;
-    }
-    const amount = (-amountMilliunits / 1000).toFixed(2);
-    const now = Date.now();
-    const tx = {
-      category: settleUpCategory === "∅" ? "" : settleUpCategory,
-      currencyCode: settleUpCurrency || "EUR",
-      dateTime: now,
-      items: [
-        {
-          amount: amount,
-          forWhom: settleUpForWhomIds.map((id) => ({ memberId: id, weight: "1" })),
-        },
-      ],
-      purpose: payee + (description ? ` - ${description}` : ""),
-      type: "expense",
-      whoPaid: [{ memberId: settleUpPayerId, weight: "1" }],
-      fixedExchangeRate: false,
-      exchangeRates: undefined,
-      receiptUrl: undefined,
-    };
-    try {
-      const data = await addSettleUpTransaction(settleUpToken, settleUpTestGroup.groupId, tx);
-      if (data && data.name) {
-        setSettleUpResult("✅ SettleUp transaction sent!");
-        setAmountMilliunits(0);
-        setDescription("");
-      } else {
-        setSettleUpResult("Error adding transaction: " + JSON.stringify(data));
-      }
-    } catch (e) {
-      setSettleUpResult("Error adding transaction: " + e.message);
-    }
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    const formState = {
-      amountMilliunits,
-      swileMilliunits,
-      payee,
-      category,
-      description,
-      target,
-      account,
-      settleUpCategory,
-    };
-    navigate("/review", { state: { formState } });
-  }
+  }, [formState.payee, settleUpTestGroup?.groupId, settleUpToken]);
 
   // Reset swileMilliunits to default when toggles change
   useEffect(() => {
-    if (account.swile && account.bourso) {
+    if (formState.account.swile && formState.account.bourso) {
       setSwileMilliunits(DEFAULT_SWILE_MILLIUNITS);
     }
-  }, [account.swile, account.bourso]);
+  }, [formState.account.swile, formState.account.bourso]);
 
   // Reveal logic
   useEffect(() => {
-    const shouldShowDetails = amountMilliunits !== 0 && (!target.ynab || account.bourso || account.swile);
-
-    setShowAccounts(target.ynab && amountMilliunits !== 0);
-    setShowDetails(shouldShowDetails);
-    setShowReview(shouldShowDetails);
-    setShowSwile(target.ynab && amountMilliunits !== 0 && account.swile);
-  }, [amountMilliunits, target.ynab, account.bourso, account.swile]);
+    setShowAccounts(formState.target.ynab && formState.amountMilliunits !== 0);
+    setShowDetails(formState.amountMilliunits !== 0 && (!formState.target.ynab || formState.account.bourso || formState.account.swile));
+    setShowSwile(formState.target.ynab && formState.amountMilliunits !== 0 && formState.account.swile);
+  }, [formState.amountMilliunits, formState.target.ynab, formState.account.bourso, formState.account.swile]);
 
   // Preload toggle button images
   useEffect(() => {
@@ -486,22 +325,38 @@ export default function App() {
   }, []);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <AppToggles target={target} setTarget={setTarget} />
+    <form onSubmit={onSubmit} className="space-y-4">
+      <AppToggles
+        target={formState.target}
+        setTarget={target => setFormState({ ...formState, target })}
+      />
       <TransitionGroup component={null}>
         <CSSTransition key="amount" timeout={300} classNames="fade-slide" nodeRef={amountRef}>
-          <AmountSection ref={amountRef} amountMilliunits={amountMilliunits} setAmountMilliunits={setAmountMilliunits} />
+          <AmountSection
+            ref={amountRef}
+            amountMilliunits={formState.amountMilliunits || 0}
+            setAmountMilliunits={val => setFormState({ ...formState, amountMilliunits: val })}
+          />
         </CSSTransition>
 
         {showAccounts && (
           <CSSTransition key="accounts" timeout={300} classNames="fade-slide" nodeRef={accountsRef}>
-            <AccountToggles ref={accountsRef} account={account} setAccount={setAccount} />
+            <AccountToggles
+              ref={accountsRef}
+              account={formState.account}
+              setAccount={account => setFormState({ ...formState, account })}
+            />
           </CSSTransition>
         )}
 
         {showSwile && (
           <CSSTransition key="swile" timeout={300} classNames="fade-slide" nodeRef={swileRef}>
-            <SwileAmountSection ref={swileRef} swileMilliunits={swileMilliunits} setSwileMilliunits={setSwileMilliunits} max={amountMilliunits} />
+            <SwileAmountSection
+              ref={swileRef}
+              swileMilliunits={formState.swileMilliunits}
+              setSwileMilliunits={val => setFormState({ ...formState, swileMilliunits: val })}
+              max={formState.amountMilliunits}
+            />
           </CSSTransition>
         )}
 
@@ -509,41 +364,14 @@ export default function App() {
           <CSSTransition key="details" timeout={300} classNames="fade-slide" nodeRef={detailsRef}>
             <DetailsSection
               ref={detailsRef}
-              payee={payee}
-              setPayee={setPayee}
-              payeeId={payeeId}
-              setPayeeId={setPayeeId}
+              formState={formState}
+              setFormState={setFormState}
               groupedPayees={groupedPayees}
-              settleUpCategory={settleUpCategory}
-              setSettleUpCategory={setSettleUpCategory}
-              DEFAULT_SETTLEUP_CATEGORY={DEFAULT_SETTLEUP_CATEGORY}
-              suggestedCategoryIds={suggestedCategoryIds}
+              groupedCategories={groupedCategories}
               categories={categories}
               categoryGroups={categoryGroups}
-              category={category}
-              setCategory={setCategory}
-              categoryId={categoryId}
-              setCategoryId={setCategoryId}
-              groupedCategories={groupedCategories}
+              suggestedCategoryIds={suggestedCategoryIds}
               handleCategoryChange={handleCategoryChange}
-              description={description}
-              setDescription={setDescription}
-            />
-          </CSSTransition>
-        )}
-
-        {showReview && (
-          <CSSTransition key="review" timeout={300} classNames="fade-slide" nodeRef={reviewRef}>
-            <ReviewSection
-              ref={reviewRef}
-              amountMilliunits={amountMilliunits}
-              swileMilliunits={swileMilliunits}
-              payee={payee}
-              category={category}
-              description={description}
-              target={target}
-              account={account}
-              settleUpCategory={settleUpCategory}
             />
           </CSSTransition>
         )}
@@ -558,18 +386,18 @@ export default function App() {
       )}
       <button
         className={`bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full ${
-          (!target.ynab && !target.settleup) || (target.ynab && !account.bourso && !account.swile)
+          (!formState.target?.ynab && !formState.target?.settleup) || (formState.target?.ynab && !formState.account?.bourso && !formState.account?.swile)
             ? ' opacity-50 cursor-not-allowed' : ''
         }`}
         type="submit"
         disabled={
-          (!target.ynab && !target.settleup) ||
-          (target.ynab && !account.bourso && !account.swile)
+          (!formState.target?.ynab && !formState.target?.settleup) ||
+          (formState.target?.ynab && !formState.account?.bourso && !formState.account?.swile)
         }
         title={
-          !target.ynab && !target.settleup
+          !formState.target?.ynab && !formState.target?.settleup
             ? 'Enable YNAB and/or SettleUp to add a transaction.'
-            : target.ynab && !account.bourso && !account.swile
+            : formState.target?.ynab && !formState.account?.bourso && !formState.account?.swile
             ? 'Enable either BoursoBank or Swile account to add a YNAB transaction.'
             : undefined
         }

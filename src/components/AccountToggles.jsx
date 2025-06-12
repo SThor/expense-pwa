@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import { forwardRef } from "react";
 import ToggleButton from "./ToggleButton";
 
 // Hoist gradientColors outside the component to avoid recreating it on every render
@@ -21,16 +21,14 @@ const AccountToggles = forwardRef(function AccountToggles(props, ref) {
         color="#d20073"
         label="BoursoBank"
         icon="/boursobank-icon.png"
-        onClick={() => props.setAccount((a) => ({ ...a, bourso: !a.bourso }))}
-        disabled={props.disabled}
+        onClick={() => props.setAccount({ ...props.account, bourso: !props.account.bourso })}
       />
       <ToggleButton
         active={props.account.swile}
         gradientColors={gradientColors}
         label="Swile"
         icon="/swile-icon.png"
-        onClick={() => props.setAccount((a) => ({ ...a, swile: !a.swile }))}
-        disabled={props.disabled}
+        onClick={() => props.setAccount({ ...props.account, swile: !props.account.swile })}
       />
     </div>
   );

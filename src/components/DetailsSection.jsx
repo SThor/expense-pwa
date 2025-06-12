@@ -2,28 +2,18 @@ import React, { forwardRef } from "react";
 import EmojiCategoryButton from "./EmojiCategoryButton";
 import GroupedAutocomplete from "./GroupedAutocomplete";
 import SuggestedCategoryPill from "./SuggestedCategoryPill";
+import { DEFAULT_SETTLEUP_CATEGORY } from "../constants";
 
 const DetailsSection = forwardRef(function DetailsSection(
   {
-    payee,
-    setPayee,
-    payeeId,
-    setPayeeId,
+    formState,
+    setFormState,
     groupedPayees,
-    settleUpCategory,
-    setSettleUpCategory,
-    DEFAULT_SETTLEUP_CATEGORY,
-    suggestedCategoryIds,
+    groupedCategories,
     categories,
     categoryGroups,
-    category,
-    setCategory,
-    categoryId,
-    setCategoryId,
-    groupedCategories,
+    suggestedCategoryIds,
     handleCategoryChange,
-    description,
-    setDescription,
   },
   ref
 ) {
@@ -32,20 +22,22 @@ const DetailsSection = forwardRef(function DetailsSection(
       <div>
         <label htmlFor="payee-autocomplete" className="block text-sm font-medium text-sky-700 mb-1">Payee</label>
         <div className="flex items-center gap-2">
-          <EmojiCategoryButton value={settleUpCategory} onChange={setSettleUpCategory} />
+          <EmojiCategoryButton value={formState.settleUpCategory} onChange={val => setFormState({ ...formState, settleUpCategory: val })} />
           <GroupedAutocomplete
             id="payee-autocomplete"
-            value={payee}
+            value={formState.payee}
             onChange={(val, item) => {
-              setPayee(val);
-              setPayeeId(item && item.value ? item.value : "");
-              if (!val) setSettleUpCategory(DEFAULT_SETTLEUP_CATEGORY);
+              setFormState({
+                ...formState,
+                payee: val,
+                payeeId: item && item.value ? item.value : "",
+                settleUpCategory: val ? formState.settleUpCategory : DEFAULT_SETTLEUP_CATEGORY
+              });
             }}
             groupedItems={groupedPayees}
             placeholder="Payee"
             onCreate={(val) => {
-              setPayee(val);
-              setPayeeId("");
+              setFormState({ ...formState, payee: val, payeeId: "" });
             }}
           />
         </div>
@@ -68,10 +60,9 @@ const DetailsSection = forwardRef(function DetailsSection(
                     key={catId}
                     cat={cat}
                     group={group}
-                    selected={categoryId === catId}
+                    selected={formState.categoryId === catId}
                     onClick={() => {
-                      setCategory(cat.name);
-                      setCategoryId(catId);
+                      setFormState({ ...formState, category: cat.name, categoryId: catId });
                     }}
                   />
                 );
@@ -84,7 +75,7 @@ const DetailsSection = forwardRef(function DetailsSection(
         <label htmlFor="category-autocomplete" className="block text-sm font-medium text-sky-700 mb-1">Category</label>
         <GroupedAutocomplete
           id="category-autocomplete"
-          value={category}
+          value={formState.category}
           onChange={handleCategoryChange}
           groupedItems={groupedCategories}
           placeholder="Category"
@@ -97,8 +88,8 @@ const DetailsSection = forwardRef(function DetailsSection(
           className="input input-bordered w-full px-3 py-2 border rounded"
           type="text"
           placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          value={formState.description}
+          onChange={(e) => setFormState({ ...formState, description: e.target.value })}
         />
       </div>
     </div>
