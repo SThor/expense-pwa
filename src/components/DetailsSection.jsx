@@ -43,6 +43,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
                 ...formState,
                 payee: val,
                 payeeId: item && item.value ? item.value : "",
+                // Reset settleUpCategory if payee is cleared
                 settleUpCategory: val
                   ? formState.settleUpCategory
                   : DEFAULT_SETTLEUP_CATEGORY,

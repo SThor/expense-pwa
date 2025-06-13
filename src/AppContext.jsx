@@ -51,10 +51,7 @@ export function AppProvider({ children }) {
         localStorage.setItem("settleUp_userId", userId);
         setSettleUpToken(token);
         setSettleUpUserId(userId);
-        console.log("[AppContext] Dummy Settle Up token and user ID used:", {
-          token,
-          userId,
-        });
+        console.log("[AppContext] Settle Up token and user ID used:");
       } catch (err) {
         setSettleUpError("Settle Up token error: " + err.message);
         console.error("[AppContext] Error retrieving Settle Up token:", err);
@@ -81,7 +78,6 @@ export function AppProvider({ children }) {
     // For your current logic, just set isLoggedIn to true.
     // You might want to add more logic here if needed.
     setIsLoggedIn(true);
-    // Optionally, set dummy Settle Up token/userId if not present
     if (!settleUpToken || !settleUpUserId) {
       setSettleUpToken("dummy_token_12345");
       setSettleUpUserId("dummy_user_12345");
