@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import PropTypes from "prop-types";
+import { useState, useRef, useEffect } from "react";
 import { MdAddCircle, MdArrowDropDown, MdClear } from "react-icons/md";
 
 function GroupedAutocomplete({
@@ -6,7 +7,7 @@ function GroupedAutocomplete({
   onChange,
   groupedItems,
   placeholder = "",
-  onCreate
+  onCreate,
 }) {
   const [input, setInput] = useState(value || "");
   const [open, setOpen] = useState(false);
@@ -40,21 +41,26 @@ function GroupedAutocomplete({
 
   // Filter and flatten for navigation/highlighting
   const filteredGroups = groupedItems
-    .map(group => ({
+    .map((group) => ({
       ...group,
-      items: group.items.filter(item =>
-        item.label.toLowerCase().includes(input.toLowerCase())
+      items: group.items.filter((item) =>
+        item.label.toLowerCase().includes(input.toLowerCase()),
       ),
     }))
-    .filter(group => group.items.length > 0);
+    .filter((group) => group.items.length > 0);
 
   const flatList = filteredGroups
     .map((group, groupIdx) =>
-      group.items.map((item, itemIdx) => ({ ...item, groupIdx, itemIdx, groupLabel: group.label }))
+      group.items.map((item, itemIdx) => ({
+        ...item,
+        groupIdx,
+        itemIdx,
+        groupLabel: group.label,
+      })),
     )
     .flat();
 
-  const handleSelect = item => {
+  const handleSelect = (item) => {
     setInput(item.label);
     onChange && onChange(item.label, item);
     setOpen(false);
@@ -69,18 +75,26 @@ function GroupedAutocomplete({
     if (!open) return;
     const total = flatList.length;
     let idx = flatList.findIndex(
-      item => item.groupIdx === highlighted.groupIdx && item.itemIdx === highlighted.itemIdx
+      (item) =>
+        item.groupIdx === highlighted.groupIdx &&
+        item.itemIdx === highlighted.itemIdx,
     );
     if (e.key === "ArrowDown") {
       e.preventDefault();
       if (total === 0) return;
       idx = (idx + 1) % total;
-      setHighlighted({ groupIdx: flatList[idx].groupIdx, itemIdx: flatList[idx].itemIdx });
+      setHighlighted({
+        groupIdx: flatList[idx].groupIdx,
+        itemIdx: flatList[idx].itemIdx,
+      });
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       if (total === 0) return;
       idx = (idx - 1 + total) % total;
-      setHighlighted({ groupIdx: flatList[idx].groupIdx, itemIdx: flatList[idx].itemIdx });
+      setHighlighted({
+        groupIdx: flatList[idx].groupIdx,
+        itemIdx: flatList[idx].itemIdx,
+      });
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (flatList[idx]) {
@@ -99,23 +113,25 @@ function GroupedAutocomplete({
 
   // Only track user focus for suppressOpen logic
   useEffect(() => {
-    const setUserFocus = () => { userFocusRef.current = true; };
+    const setUserFocus = () => {
+      userFocusRef.current = true;
+    };
     const input = inputRef.current;
     if (input) {
-      input.addEventListener('mousedown', setUserFocus);
-      input.addEventListener('touchstart', setUserFocus);
-      input.addEventListener('keydown', setUserFocus);
+      input.addEventListener("mousedown", setUserFocus);
+      input.addEventListener("touchstart", setUserFocus);
+      input.addEventListener("keydown", setUserFocus);
     }
     return () => {
       if (input) {
-        input.removeEventListener('mousedown', setUserFocus);
-        input.removeEventListener('touchstart', setUserFocus);
-        input.removeEventListener('keydown', setUserFocus);
+        input.removeEventListener("mousedown", setUserFocus);
+        input.removeEventListener("touchstart", setUserFocus);
+        input.removeEventListener("keydown", setUserFocus);
       }
     };
   }, []);
 
-  const handleInputChange = e => {
+  const handleInputChange = (e) => {
     setInput(e.target.value);
     onChange && onChange(e.target.value, null);
     setOpen(true);
@@ -158,14 +174,22 @@ function GroupedAutocomplete({
           <button
             type="button"
             className="absolute right-9 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 focus:outline-none"
-            style={{ background: "none", border: "none", padding: 0, margin: 0, cursor: "pointer" }}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              margin: 0,
+              cursor: "pointer",
+            }}
             tabIndex={-1}
             onClick={() => {
               setInput("");
               onChange && onChange("", null);
               setOpen(true);
               justClearedRef.current = true;
-              setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 0);
+              setTimeout(() => {
+                if (inputRef.current) inputRef.current.focus();
+              }, 0);
             }}
             aria-label="Clear"
           >
@@ -183,19 +207,21 @@ function GroupedAutocomplete({
             transition: "box-shadow 0.2s",
           }}
         >
-          {onCreate && input && !flatList.some(item => item.label === input) && (
-            <div
-              className="cursor-pointer px-3 py-2 hover:bg-blue-50 text-blue-700 flex items-center"
-              onClick={e => {
-                e.preventDefault();
-                onCreate(input);
-                setOpen(false);
-              }}
-            >
-              <MdAddCircle className="text-xl mr-2 text-blue-600" />
-              Create "{input}" {placeholder}
-            </div>
-          )}
+          {onCreate &&
+            input &&
+            !flatList.some((item) => item.label === input) && (
+              <div
+                className="cursor-pointer px-3 py-2 hover:bg-blue-50 text-blue-700 flex items-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onCreate(input);
+                  setOpen(false);
+                }}
+              >
+                <MdAddCircle className="text-xl mr-2 text-blue-600" />
+                Create &quot;{input}&quot; {placeholder}
+              </div>
+            )}
           {filteredGroups.length === 0 && (
             <div className="px-3 py-2 text-gray-400">No matches</div>
           )}
@@ -208,18 +234,21 @@ function GroupedAutocomplete({
                 <div
                   key={item.value}
                   className={`px-3 py-2 cursor-pointer transition ${
-                    highlighted.groupIdx === groupIdx && highlighted.itemIdx === itemIdx
+                    highlighted.groupIdx === groupIdx &&
+                    highlighted.itemIdx === itemIdx
                       ? "bg-blue-100"
                       : "hover:bg-blue-50"
                   }`}
-                  onClick={e => {
+                  onClick={(e) => {
                     e.preventDefault();
                     handleSelect(item);
                   }}
                   onMouseEnter={() => setHighlighted({ groupIdx, itemIdx })}
                 >
                   {item.label}
-                  {item.extra && <span className="float-right text-xs">{item.extra}</span>}
+                  {item.extra && (
+                    <span className="float-right text-xs">{item.extra}</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -238,5 +267,24 @@ function GroupedAutocomplete({
     </div>
   );
 }
+
+GroupedAutocomplete.propTypes = {
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+  groupedItems: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      items: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+          value: PropTypes.any.isRequired,
+          extra: PropTypes.node,
+        }),
+      ).isRequired,
+    }),
+  ).isRequired,
+  placeholder: PropTypes.string,
+  onCreate: PropTypes.func,
+};
 
 export default GroupedAutocomplete;

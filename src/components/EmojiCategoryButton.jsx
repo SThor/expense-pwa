@@ -1,6 +1,7 @@
-import { useRef, useEffect, useState } from "react";
-import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
+import PropTypes from "prop-types";
+import { useRef, useEffect, useState } from "react";
 import { MdArrowDropDown } from "react-icons/md";
 
 export default function EmojiCategoryButton({ value, onChange }) {
@@ -63,3 +64,8 @@ export default function EmojiCategoryButton({ value, onChange }) {
     </div>
   );
 }
+
+EmojiCategoryButton.propTypes = {
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};

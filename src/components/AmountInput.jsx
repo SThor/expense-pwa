@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { useState, useEffect } from "react";
 
 /**
@@ -95,3 +96,8 @@ export default function AmountInput({ value, onChange }) {
     </div>
   );
 }
+
+AmountInput.propTypes = {
+  value: PropTypes.number.isRequired,
+  onChange: PropTypes.func.isRequired,
+};

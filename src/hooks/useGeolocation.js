@@ -6,15 +6,18 @@ import { useState, useEffect } from "react";
  * @param {Object} options - Geolocation API options
  * @returns {{lat: number, lng: number} | null}
  */
-export function useGeolocation(options = { enableHighAccuracy: true, timeout: 5000 }) {
+export function useGeolocation(
+  options = { enableHighAccuracy: true, timeout: 5000 },
+) {
   const [position, setPosition] = useState(null);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
-      pos => setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) =>
+        setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => setPosition(null),
-      options
+      options,
     );
     // Only run once on mount
   }, []);

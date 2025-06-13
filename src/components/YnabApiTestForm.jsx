@@ -1,19 +1,16 @@
+import PropTypes from "prop-types";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import GroupedAutocomplete from "./GroupedAutocomplete";
-import SuggestedCategoryPill from "./SuggestedCategoryPill";
-import { getClosestLocation } from "../utils/ynabUtils";
+
+import { useAppContext } from "../AppContext.jsx";
 import { useGeolocation } from "../hooks/useGeolocation";
-import { useAppContext } from "../AppContext";
-import AmountInput from "./AmountInput";
+import { getClosestLocation } from "../utils/ynabUtils";
+
+import AmountInput from "./AmountInput.jsx";
+import GroupedAutocomplete from "./GroupedAutocomplete.jsx";
+import SuggestedCategoryPill from "./SuggestedCategoryPill.jsx";
 
 export default function YnabApiTestForm({ setResult }) {
-  const {
-    ynabAPI,
-    ynabToken: token,
-    setYnabToken: setToken,
-    budgetId,
-    setBudgetId,
-  } = useAppContext();
+  const { ynabAPI, budgetId, setBudgetId } = useAppContext();
   const [budgets, setBudgets] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [accountId, setAccountId] = useState("");
@@ -45,7 +42,9 @@ export default function YnabApiTestForm({ setResult }) {
         //   </div>
         // );
         if (!budgetId) {
-          const found = res.data.budgets.find(b => b.name === "Starting anew");
+          const found = res.data.budgets.find(
+            (b) => b.name === "Starting anew",
+          );
           if (found) {
             setBudgetId(found.id);
             localStorage.setItem("ynab_budget_id", found.id);
@@ -73,7 +72,7 @@ export default function YnabApiTestForm({ setResult }) {
         setPayees(payeesRes.data.payees);
         const allGroups = catRes.data.category_groups;
         setCategoryGroups(allGroups);
-        const allCats = allGroups.flatMap(g => g.categories);
+        const allCats = allGroups.flatMap((g) => g.categories);
         setCategories(allCats);
         // setResult(
         //   <div>
@@ -87,7 +86,10 @@ export default function YnabApiTestForm({ setResult }) {
         //   </div>
         // );
       } catch (e) {
-        setResult("Error fetching accounts/payees/categories: " + (e.message || e.toString()));
+        setResult(
+          "Error fetching accounts/payees/categories: " +
+            (e.message || e.toString()),
+        );
       }
     }
     fetchAll();
@@ -102,10 +104,13 @@ export default function YnabApiTestForm({ setResult }) {
     async function fetchPayeeTrans() {
       try {
         // Correct YNAB API method for payee transactions
-        const res = await ynabAPI.transactions.getTransactionsByPayee(budgetId, payeeId);
+        const res = await ynabAPI.transactions.getTransactionsByPayee(
+          budgetId,
+          payeeId,
+        );
         const transactions = res.data.transactions;
         const counts = {};
-        transactions.forEach(tx => {
+        transactions.forEach((tx) => {
           if (tx.category_id) {
             counts[tx.category_id] = (counts[tx.category_id] || 0) + 1;
           }
@@ -123,7 +128,9 @@ export default function YnabApiTestForm({ setResult }) {
         // );
       } catch (e) {
         setSuggestedCategoryIds([]);
-        setResult("Error fetching payee transactions: " + (e.message || e.toString()));
+        setResult(
+          "Error fetching payee transactions: " + (e.message || e.toString()),
+        );
       }
     }
     fetchPayeeTrans();
@@ -150,7 +157,8 @@ export default function YnabApiTestForm({ setResult }) {
       const locA = getClosestLocation(a.id, payeeLocations, userPosition);
       const locB = getClosestLocation(b.id, payeeLocations, userPosition);
       if (userPosition && locA && locB) {
-        if (locA.distance !== locB.distance) return locA.distance - locB.distance;
+        if (locA.distance !== locB.distance)
+          return locA.distance - locB.distance;
       } else if (userPosition && (locA || locB)) {
         return locA ? -1 : 1;
       }
@@ -164,7 +172,9 @@ export default function YnabApiTestForm({ setResult }) {
   const closestPayees = useMemo(() => {
     if (!userPosition || !payeeLocations.length) return [];
     // Only payees with a location
-    const payeesWithLoc = payees.filter(p => getClosestLocation(p.id, payeeLocations, userPosition));
+    const payeesWithLoc = payees.filter((p) =>
+      getClosestLocation(p.id, payeeLocations, userPosition),
+    );
     // Sort by distance
     const sorted = sortPayees(payeesWithLoc);
     return sorted.slice(0, 3);
@@ -174,42 +184,51 @@ export default function YnabApiTestForm({ setResult }) {
     const groups = [];
     if (closestPayees.length > 0) {
       groups.push({
-        label: 'Closest to you',
-        items: closestPayees.map(p => ({ value: p.id, label: p.name })),
+        label: "Closest to you",
+        items: closestPayees.map((p) => ({ value: p.id, label: p.name })),
       });
     }
     groups.push({
       label: "Saved Payees",
-      items: sortPayees(payees.filter(p => !p.transfer_account_id && !closestPayees.some(cp => cp.id === p.id))).map(p => ({
+      items: sortPayees(
+        payees.filter(
+          (p) =>
+            !p.transfer_account_id &&
+            !closestPayees.some((cp) => cp.id === p.id),
+        ),
+      ).map((p) => ({
         value: p.id,
         label: p.name,
       })),
     });
     groups.push({
       label: "Payments and Transfers",
-      items: sortPayees(payees.filter(p => p.transfer_account_id)).map(p => ({
-        value: p.id,
-        label: p.name,
-      })),
+      items: sortPayees(payees.filter((p) => p.transfer_account_id)).map(
+        (p) => ({
+          value: p.id,
+          label: p.name,
+        }),
+      ),
     });
-    return groups.filter(g => g.items.length > 0);
+    return groups.filter((g) => g.items.length > 0);
   }, [payees, userPosition, payeeLocations, closestPayees]);
 
   // Memoized grouped categories for autocomplete
-  const groupedCategories = useMemo(() =>
-    categoryGroups
-      .filter(g => g.categories && g.categories.length > 0)
-      .map(group => ({
-        label: group.name,
-        items: group.categories
-          .filter(cat => !cat.deleted && !cat.hidden)
-          .map(cat => ({
-            value: cat.id,
-            label: cat.name,
-          })),
-      }))
-      .filter(group => group.items.length > 0),
-    [categoryGroups]
+  const groupedCategories = useMemo(
+    () =>
+      categoryGroups
+        .filter((g) => g.categories && g.categories.length > 0)
+        .map((group) => ({
+          label: group.name,
+          items: group.categories
+            .filter((cat) => !cat.deleted && !cat.hidden)
+            .map((cat) => ({
+              value: cat.id,
+              label: cat.name,
+            })),
+        }))
+        .filter((group) => group.items.length > 0),
+    [categoryGroups],
   );
 
   // Memoized: When payee is selected from autocomplete, set both payee and payeeId
@@ -233,7 +252,12 @@ export default function YnabApiTestForm({ setResult }) {
       return;
     }
     // Validation debug
-    if (!accountId || amountMilliunits === 0 || (!payee && !payeeId) || !categoryId) {
+    if (
+      !accountId ||
+      amountMilliunits === 0 ||
+      (!payee && !payeeId) ||
+      !categoryId
+    ) {
       setResult("❌ Please fill all required fields before submitting.");
       return;
     }
@@ -249,15 +273,21 @@ export default function YnabApiTestForm({ setResult }) {
         cleared: "cleared",
         approved: true,
       };
-      const response = await ynabAPI.transactions.createTransaction(budgetId, { transaction });
+      const response = await ynabAPI.transactions.createTransaction(budgetId, {
+        transaction,
+      });
       setResult(
         <div>
           <div className="flex items-center gap-2 text-green-700 font-semibold">
             <span>✅ Transaction sent!</span>
-            <span className="text-xs text-gray-500">(ID: {response.data.transaction.id})</span>
+            <span className="text-xs text-gray-500">
+              (ID: {response.data.transaction.id})
+            </span>
           </div>
-          <pre className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-40">{JSON.stringify(response.data, null, 2)}</pre>
-        </div>
+          <pre className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-xs overflow-x-auto max-h-40">
+            {JSON.stringify(response.data, null, 2)}
+          </pre>
+        </div>,
       );
       setAmountMilliunits(0);
       setDesc("");
@@ -283,35 +313,37 @@ export default function YnabApiTestForm({ setResult }) {
   // Show result below the form for debug/UX clarity
   return (
     <>
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4"
-        autoComplete="off"
-      >
-        <h2 className="text-xl font-bold mb-2 text-sky-700">YNAB API Test Form</h2>
+      <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+        <h2 className="text-xl font-bold mb-2 text-sky-700">
+          YNAB API Test Form
+        </h2>
         <select
           className="input input-bordered w-full px-3 py-2 border rounded"
           value={budgetId}
-          onChange={e => {
+          onChange={(e) => {
             setBudgetId(e.target.value);
             localStorage.setItem("ynab_budget_id", e.target.value);
           }}
           required
         >
           <option value="">Select Budget</option>
-          {budgets.map(b => (
-            <option key={b.id} value={b.id}>{b.name}</option>
+          {budgets.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
           ))}
         </select>
         <select
           className="input input-bordered w-full px-3 py-2 border rounded"
           value={accountId}
-          onChange={e => setAccountId(e.target.value)}
+          onChange={(e) => setAccountId(e.target.value)}
           required
         >
           <option value="">Select Account</option>
-          {accounts.map(a => (
-            <option key={a.id} value={a.id}>{a.name}</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
           ))}
         </select>
         <GroupedAutocomplete
@@ -319,20 +351,24 @@ export default function YnabApiTestForm({ setResult }) {
           onChange={handlePayeeChange}
           groupedItems={groupedPayees}
           placeholder="Payee"
-          onCreate={val => {
+          onCreate={(val) => {
             setPayee(val);
             setPayeeId("");
           }}
         />
         {suggestedCategoryIds.length > 0 && (
           <div>
-            <div className="text-sm text-gray-600 mb-2 font-semibold">Suggested categories:</div>
+            <div className="text-sm text-gray-600 mb-2 font-semibold">
+              Suggested categories:
+            </div>
             <div className="flex flex-wrap gap-2 mb-1">
               {suggestedCategoryIds
-                .map(catId => {
-                  const cat = categories.find(c => c.id === catId);
+                .map((catId) => {
+                  const cat = categories.find((c) => c.id === catId);
                   if (!cat) return null; // Filter out not found
-                  const group = categoryGroups.find(g => g.categories.some(c => c.id === catId));
+                  const group = categoryGroups.find((g) =>
+                    g.categories.some((c) => c.id === catId),
+                  );
                   return (
                     <SuggestedCategoryPill
                       key={catId}
@@ -356,21 +392,23 @@ export default function YnabApiTestForm({ setResult }) {
           groupedItems={groupedCategories}
           placeholder="Category"
         />
-        <AmountInput
-          value={amountMilliunits}
-          onChange={setAmountMilliunits}
-        />
+        <AmountInput value={amountMilliunits} onChange={setAmountMilliunits} />
         <input
           className="input input-bordered w-full px-3 py-2 border rounded"
           type="text"
           placeholder="Description"
           value={desc}
-          onChange={e => setDesc(e.target.value)}
+          onChange={(e) => setDesc(e.target.value)}
         />
         <button
           className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full"
           type="submit"
-          disabled={!accountId || amountMilliunits === 0 || (!payee && !payeeId) || !categoryId}
+          disabled={
+            !accountId ||
+            amountMilliunits === 0 ||
+            (!payee && !payeeId) ||
+            !categoryId
+          }
         >
           Add Transaction
         </button>
@@ -378,3 +416,7 @@ export default function YnabApiTestForm({ setResult }) {
     </>
   );
 }
+
+YnabApiTestForm.propTypes = {
+  setResult: PropTypes.func.isRequired,
+};

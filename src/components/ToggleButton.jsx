@@ -1,4 +1,9 @@
-import React, { useRef } from "react";
+import PropTypes from "prop-types";
+import { useRef, cloneElement } from "react";
+
+const COLOR_TOGGLE_DEFAULT = "#23285A";
+const COLOR_TOGGLE_INACTIVE = "#9ca3af";
+const COLOR_TOGGLE_LABEL_INACTIVE = "#4b5563"; // Tailwind gray-700
 
 function makeConicGradient(colors) {
   if (!colors || colors.length === 0) return undefined;
@@ -7,7 +12,7 @@ function makeConicGradient(colors) {
 
 export default function ToggleButton({
   active,
-  color = "#23285A",
+  color = COLOR_TOGGLE_DEFAULT,
   gradientColors,
   icon,
   label,
@@ -32,16 +37,16 @@ export default function ToggleButton({
       />
     );
   } else if (icon) {
-    iconElement = React.cloneElement(icon, {
+    iconElement = cloneElement(icon, {
       size: 40,
-      color: active ? color : "#9ca3af",
+      color: active ? color : COLOR_TOGGLE_INACTIVE,
       style: { opacity: active ? 1 : 0.7 },
     });
   }
 
   const labelStyle = active
     ? { color }
-    : { color: "#4b5563" }; // Tailwind gray-700
+    : { color: COLOR_TOGGLE_LABEL_INACTIVE };
 
   const buttonStyle = {
     width: size,
@@ -53,10 +58,16 @@ export default function ToggleButton({
     alignItems: "center",
     justifyContent: "center",
     padding: isGradient ? borderWidth : 0,
-    border: isGradient ? "none" : `${borderWidth}px solid ${active ? color : "#9ca3af"}`,
+    border: isGradient
+      ? "none"
+      : `${borderWidth}px solid ${active ? color : COLOR_TOGGLE_INACTIVE}`,
     background: isGradient
-      ? (active ? makeConicGradient(gradientColors) : "#9ca3af")
-      : (active ? `${color}22` : "#fff"),
+      ? active
+        ? makeConicGradient(gradientColors)
+        : COLOR_TOGGLE_INACTIVE
+      : active
+        ? `${color}22`
+        : "#fff",
     outline: "none",
     boxShadow: "none",
   };
@@ -67,7 +78,7 @@ export default function ToggleButton({
     if (buttonRef.current && isGradient) {
       buttonRef.current.style.background = active
         ? makeConicGradient(gradientColors)
-        : "#9ca3af";
+        : COLOR_TOGGLE_INACTIVE;
     }
     // Prevent default active background flash
     if (isGradient) {
@@ -78,7 +89,7 @@ export default function ToggleButton({
     if (buttonRef.current && isGradient) {
       buttonRef.current.style.background = active
         ? makeConicGradient(gradientColors)
-        : "#9ca3af";
+        : COLOR_TOGGLE_INACTIVE;
     }
   };
 
@@ -129,3 +140,14 @@ export default function ToggleButton({
     </button>
   );
 }
+
+ToggleButton.propTypes = {
+  active: PropTypes.bool.isRequired,
+  color: PropTypes.string,
+  gradientColors: PropTypes.arrayOf(PropTypes.string),
+  icon: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+  label: PropTypes.string.isRequired,
+  onClick: PropTypes.func.isRequired,
+  size: PropTypes.number,
+  background: PropTypes.string,
+};

@@ -1,4 +1,5 @@
-import React, { forwardRef } from "react";
+import PropTypes from "prop-types";
+import { forwardRef } from "react";
 
 const ReviewSection = forwardRef(function ReviewSection(props, ref) {
   if (!props.amountMilliunits) return null;
@@ -26,7 +27,8 @@ const ReviewSection = forwardRef(function ReviewSection(props, ref) {
         Category: <span className="font-mono">{props.category || "-"}</span>
       </div>
       <div>
-        Description: <span className="font-mono">{props.description || "-"}</span>
+        Description:{" "}
+        <span className="font-mono">{props.description || "-"}</span>
       </div>
       <div>
         Apps:{" "}
@@ -39,7 +41,10 @@ const ReviewSection = forwardRef(function ReviewSection(props, ref) {
       <div>
         Accounts:{" "}
         <span className="font-mono">
-          {[props.account.bourso && "BoursoBank", props.account.swile && "Swile"]
+          {[
+            props.account.bourso && "BoursoBank",
+            props.account.swile && "Swile",
+          ]
             .filter(Boolean)
             .join(", ") || "-"}
         </span>
@@ -53,5 +58,22 @@ const ReviewSection = forwardRef(function ReviewSection(props, ref) {
     </div>
   );
 });
+
+ReviewSection.propTypes = {
+  amountMilliunits: PropTypes.number.isRequired,
+  swileMilliunits: PropTypes.number,
+  payee: PropTypes.string,
+  category: PropTypes.string,
+  description: PropTypes.string,
+  settleUpCategory: PropTypes.string,
+  account: PropTypes.shape({
+    bourso: PropTypes.bool,
+    swile: PropTypes.bool,
+  }).isRequired,
+  target: PropTypes.shape({
+    ynab: PropTypes.bool,
+    settleup: PropTypes.bool,
+  }).isRequired,
+};
 
 export default ReviewSection;
