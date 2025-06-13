@@ -77,6 +77,9 @@ function RouterApp() {
                   canReview: true,
                 }));
               }}
+              resetFormState={() => {
+                setFormState(DEFAULT_FORM_STATE);
+              }}
             />
           </RequireAuth>
         }

@@ -326,7 +326,13 @@ export default function App({ onSubmit, formState, setFormState }) {
     <form onSubmit={onSubmit} className="space-y-4">
       <AppToggles
         target={formState.target}
-        setTarget={(target) => setFormState({ ...formState, target })}
+        setTarget={(updater) =>
+          setFormState((prev) => ({
+            ...prev,
+            target:
+              typeof updater === "function" ? updater(prev.target) : updater,
+          }))
+        }
       />
       <TransitionGroup component={null}>
         <CSSTransition
@@ -339,7 +345,7 @@ export default function App({ onSubmit, formState, setFormState }) {
             ref={amountRef}
             amountMilliunits={formState.amountMilliunits || 0}
             setAmountMilliunits={(val) =>
-              setFormState({ ...formState, amountMilliunits: val })
+              setFormState((prev) => ({ ...prev, amountMilliunits: val }))
             }
           />
         </CSSTransition>
@@ -354,7 +360,15 @@ export default function App({ onSubmit, formState, setFormState }) {
             <AccountToggles
               ref={accountsRef}
               account={formState.account}
-              setAccount={(account) => setFormState({ ...formState, account })}
+              setAccount={(updater) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  account:
+                    typeof updater === "function"
+                      ? updater(prev.account)
+                      : updater,
+                }))
+              }
             />
           </CSSTransition>
         )}
@@ -370,7 +384,7 @@ export default function App({ onSubmit, formState, setFormState }) {
               ref={swileRef}
               swileMilliunits={formState.swileMilliunits}
               setSwileMilliunits={(val) =>
-                setFormState({ ...formState, swileMilliunits: val })
+                setFormState((prev) => ({ ...prev, swileMilliunits: val }))
               }
               max={formState.amountMilliunits}
             />

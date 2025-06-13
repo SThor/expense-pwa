@@ -7,14 +7,22 @@ import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
 import { formStatePropType } from "./propTypes";
 import ReviewPage from "./ReviewPage.jsx";
 
-export default function MainFormPage({ formState, setFormState }) {
+export default function MainFormPage({
+  formState,
+  setFormState,
+  resetFormState,
+}) {
   const { logout } = useAppContext();
   const [showReview, setShowReview] = useState(false);
   return showReview ? (
     <ReviewPage
       formState={formState}
       onBack={() => setShowReview(false)}
-      onSubmitted={() => setShowReview(false)}
+      onSubmitted={() => {
+        // Reset form state after submission
+        resetFormState();
+        setShowReview(false);
+      }}
     />
   ) : (
     <CenteredCardLayout>
@@ -39,4 +47,5 @@ export default function MainFormPage({ formState, setFormState }) {
 MainFormPage.propTypes = {
   formState: formStatePropType.isRequired,
   setFormState: PropTypes.func.isRequired,
+  resetFormState: PropTypes.func.isRequired,
 };

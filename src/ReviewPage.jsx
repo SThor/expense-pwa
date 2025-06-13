@@ -92,7 +92,7 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
       const res = await ynabAPI.transactions.createTransaction(budgetId, {
         transaction,
       });
-      setResult("✅ YNAB transaction sent!", JSON.stringify(res, null, 2));
+      setResult("✅ YNAB transaction sent!\n" + JSON.stringify(res, null, 2));
     } catch (err) {
       setResult("YNAB API error: " + (err?.message || err));
     } finally {
