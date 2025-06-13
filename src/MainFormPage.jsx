@@ -1,23 +1,23 @@
-import {useState} from "react";
-import { useAppContext } from "./AppContext";
-import App from "./App";
-import CenteredCardLayout from "./components/CenteredCardLayout";
-import ReviewPage from "./ReviewPage";
+import PropTypes from "prop-types";
+import { useState } from "react";
 
-export default function MainFormPage({ formState, setFormState, onSubmit }) {
+import App from "./App.jsx";
+import { useAppContext } from "./AppContext.jsx";
+import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
+import { formStatePropType } from "./propTypes";
+import ReviewPage from "./ReviewPage.jsx";
+
+export default function MainFormPage({ formState, setFormState }) {
   const { logout } = useAppContext();
   const [showReview, setShowReview] = useState(false);
-  const [result, setResult] = useState(""); // generic result
-  return (
-    showReview ? (
-      <ReviewPage
-        formState={formState}
-        onBack={() => setShowReview(false)}
-        onSubmitted={() => setShowReview(false)}
-        result={result}
-      />
-    ) : (
-      <CenteredCardLayout>
+  return showReview ? (
+    <ReviewPage
+      formState={formState}
+      onBack={() => setShowReview(false)}
+      onSubmitted={() => setShowReview(false)}
+    />
+  ) : (
+    <CenteredCardLayout>
       <div className="flex justify-between mb-4">
         <span /> {/* Stretch to fill space */}
         <button
@@ -33,6 +33,10 @@ export default function MainFormPage({ formState, setFormState, onSubmit }) {
         setFormState={setFormState}
       />
     </CenteredCardLayout>
-    )   
   );
 }
+
+MainFormPage.propTypes = {
+  formState: formStatePropType.isRequired,
+  setFormState: PropTypes.func.isRequired,
+};

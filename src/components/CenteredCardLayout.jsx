@@ -1,3 +1,5 @@
+import PropTypes from "prop-types";
+
 export default function CenteredCardLayout({ children }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
@@ -7,3 +9,7 @@ export default function CenteredCardLayout({ children }) {
     </div>
   );
 }
+
+CenteredCardLayout.propTypes = {
+  children: PropTypes.node.isRequired,
+};

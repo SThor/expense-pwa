@@ -1,4 +1,5 @@
-import React, { useRef } from "react";
+import PropTypes from "prop-types";
+import { useRef, cloneElement } from "react";
 
 const COLOR_TOGGLE_DEFAULT = "#23285A";
 const COLOR_TOGGLE_INACTIVE = "#9ca3af";
@@ -36,7 +37,7 @@ export default function ToggleButton({
       />
     );
   } else if (icon) {
-    iconElement = React.cloneElement(icon, {
+    iconElement = cloneElement(icon, {
       size: 40,
       color: active ? color : COLOR_TOGGLE_INACTIVE,
       style: { opacity: active ? 1 : 0.7 },
@@ -57,10 +58,16 @@ export default function ToggleButton({
     alignItems: "center",
     justifyContent: "center",
     padding: isGradient ? borderWidth : 0,
-    border: isGradient ? "none" : `${borderWidth}px solid ${active ? color : COLOR_TOGGLE_INACTIVE}`,
+    border: isGradient
+      ? "none"
+      : `${borderWidth}px solid ${active ? color : COLOR_TOGGLE_INACTIVE}`,
     background: isGradient
-      ? (active ? makeConicGradient(gradientColors) : COLOR_TOGGLE_INACTIVE)
-      : (active ? `${color}22` : "#fff"),
+      ? active
+        ? makeConicGradient(gradientColors)
+        : COLOR_TOGGLE_INACTIVE
+      : active
+        ? `${color}22`
+        : "#fff",
     outline: "none",
     boxShadow: "none",
   };
@@ -133,3 +140,14 @@ export default function ToggleButton({
     </button>
   );
 }
+
+ToggleButton.propTypes = {
+  active: PropTypes.bool.isRequired,
+  color: PropTypes.string,
+  gradientColors: PropTypes.arrayOf(PropTypes.string),
+  icon: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+  label: PropTypes.string.isRequired,
+  onClick: PropTypes.func.isRequired,
+  size: PropTypes.number,
+  background: PropTypes.string,
+};

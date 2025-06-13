@@ -1,5 +1,6 @@
-import React from "react";
-import ToggleButton from "./ToggleButton";
+import PropTypes from "prop-types";
+
+import ToggleButton from "./ToggleButton.jsx";
 
 export default function AppToggles({ target, setTarget }) {
   return (
@@ -21,3 +22,11 @@ export default function AppToggles({ target, setTarget }) {
     </div>
   );
 }
+
+AppToggles.propTypes = {
+  target: PropTypes.shape({
+    ynab: PropTypes.bool,
+    settleup: PropTypes.bool,
+  }).isRequired,
+  setTarget: PropTypes.func.isRequired,
+};

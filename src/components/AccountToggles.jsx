@@ -1,5 +1,7 @@
+import PropTypes from "prop-types";
 import { forwardRef } from "react";
-import ToggleButton from "./ToggleButton";
+
+import ToggleButton from "./ToggleButton.jsx";
 
 // Hoist gradientColors outside the component to avoid recreating it on every render
 const gradientColors = [
@@ -21,17 +23,29 @@ const AccountToggles = forwardRef(function AccountToggles(props, ref) {
         color="#d20073"
         label="BoursoBank"
         icon="/boursobank-icon.png"
-        onClick={() => props.setAccount({ ...props.account, bourso: !props.account.bourso })}
+        onClick={() =>
+          props.setAccount({ ...props.account, bourso: !props.account.bourso })
+        }
       />
       <ToggleButton
         active={props.account.swile}
         gradientColors={gradientColors}
         label="Swile"
         icon="/swile-icon.png"
-        onClick={() => props.setAccount({ ...props.account, swile: !props.account.swile })}
+        onClick={() =>
+          props.setAccount({ ...props.account, swile: !props.account.swile })
+        }
       />
     </div>
   );
 });
+
+AccountToggles.propTypes = {
+  account: PropTypes.shape({
+    bourso: PropTypes.bool.isRequired,
+    swile: PropTypes.bool.isRequired,
+  }).isRequired,
+  setAccount: PropTypes.func.isRequired,
+};
 
 export default AccountToggles;

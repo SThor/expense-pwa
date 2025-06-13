@@ -12,15 +12,15 @@ export default [
   pluginReact.configs.flat["jsx-runtime"],
   eslintImport.flatConfigs.recommended,
   {
-    files: ['**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}'],
+    files: ["**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}"],
     languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
+      ecmaVersion: "latest",
+      sourceType: "module",
     },
     rules: {
-      'no-unused-vars': 'off',
-      'import/no-dynamic-require': 'warn',
-      'import/no-nodejs-modules': 'warn',
+      "no-unused-vars": "off",
+      "import/no-dynamic-require": "warn",
+      "import/no-nodejs-modules": "warn",
     },
   },
   {
@@ -43,7 +43,14 @@ export default [
       "import/order": [
         "error",
         {
-          groups: ["builtin", "external", "internal", "parent", "sibling", "index"],
+          groups: [
+            "builtin",
+            "external",
+            "internal",
+            "parent",
+            "sibling",
+            "index",
+          ],
           "newlines-between": "always",
           alphabetize: { order: "asc", caseInsensitive: true },
         },

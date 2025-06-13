@@ -10,7 +10,9 @@
 .fade-slide-enter-active {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 300ms, transform 300ms;
+  transition:
+    opacity 300ms,
+    transform 300ms;
 }
 .fade-slide-exit {
   opacity: 1;
@@ -19,5 +21,7 @@
 .fade-slide-exit-active {
   opacity: 0;
   transform: translateY(-10px);
-  transition: opacity 200ms, transform 200ms;
+  transition:
+    opacity 200ms,
+    transform 200ms;
 }

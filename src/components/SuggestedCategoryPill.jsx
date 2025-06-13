@@ -1,10 +1,10 @@
-import React from "react";
+import PropTypes from "prop-types";
 
 export default function SuggestedCategoryPill({
   cat,
   group,
   selected,
-  onClick
+  onClick,
 }) {
   return (
     <button
@@ -18,3 +18,14 @@ export default function SuggestedCategoryPill({
     </button>
   );
 }
+
+SuggestedCategoryPill.propTypes = {
+  cat: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+  }).isRequired,
+  group: PropTypes.shape({
+    name: PropTypes.string,
+  }),
+  selected: PropTypes.bool,
+  onClick: PropTypes.func.isRequired,
+};

@@ -9,19 +9,24 @@
  * @param {string} matchType - 'contains' | 'startsWith' | 'exact'
  * @returns {string|null} - Most common category or null if none
  */
-export function getMostCommonCategoryFromTransactions(transactions, input, field = 'purpose', matchType = 'contains') {
+export function getMostCommonCategoryFromTransactions(
+  transactions,
+  input,
+  field = "purpose",
+  matchType = "contains",
+) {
   if (!input || !transactions || transactions.length === 0) return null;
   const normInput = input.trim().toLowerCase();
   let matches = [];
   for (const tx of transactions) {
-    if (!tx[field] || !tx.category || tx.category.trim() === '') continue;
+    if (!tx[field] || !tx.category || tx.category.trim() === "") continue;
     const normField = tx[field].trim().toLowerCase();
     let isMatch = false;
-    if (matchType === 'contains') {
+    if (matchType === "contains") {
       isMatch = normField.includes(normInput);
-    } else if (matchType === 'startsWith') {
+    } else if (matchType === "startsWith") {
       isMatch = normField.startsWith(normInput);
-    } else if (matchType === 'exact') {
+    } else if (matchType === "exact") {
       isMatch = normField === normInput;
     }
     if (isMatch) matches.push(tx);

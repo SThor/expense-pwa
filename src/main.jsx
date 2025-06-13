@@ -1,13 +1,25 @@
-import { useState, useEffect, StrictMode} from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { AppProvider, useAppContext } from "./AppContext";
-import LoginPage from "./LoginPage";
-import MainFormPage from "./MainFormPage";
-import DevApp from "./DevApp";
-import NotFoundPage from "./NotFoundPage";
-import { DEFAULT_SETTLEUP_CATEGORY, DEFAULT_SWILE_MILLIUNITS } from "./constants";
-import './index.css'
+import PropTypes from "prop-types";
+import { useState, useEffect, StrictMode } from "react";
+import ReactDOM from "react-dom/client";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
+import { AppProvider, useAppContext } from "./AppContext.jsx";
+import {
+  DEFAULT_SETTLEUP_CATEGORY,
+  DEFAULT_SWILE_MILLIUNITS,
+} from "./constants";
+import DevApp from "./DevApp.jsx";
+import LoginPage from "./LoginPage.jsx";
+import MainFormPage from "./MainFormPage.jsx";
+import NotFoundPage from "./NotFoundPage.jsx";
+import "./index.css";
 
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAppContext();
@@ -52,28 +64,38 @@ function RouterApp() {
     <Routes>
       <Route path="/login" element={<LoginPage onLogin={login} />} />
       <Route path="/dev" element={<DevApp />} />
-      <Route path="/" element={
-        <RequireAuth>
-          <MainFormPage
-            formState={formState}
-            setFormState={setFormState}
-            onSubmit={() => {
-              setFormState((prevState) => ({ ...prevState, canReview: true }));
-            }}
-          />
-        </RequireAuth>
-      } />
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <MainFormPage
+              formState={formState}
+              setFormState={setFormState}
+              onSubmit={() => {
+                setFormState((prevState) => ({
+                  ...prevState,
+                  canReview: true,
+                }));
+              }}
+            />
+          </RequireAuth>
+        }
+      />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AppProvider>
       <BrowserRouter>
         <RouterApp />
       </BrowserRouter>
     </AppProvider>
-  </StrictMode>
-)
+  </StrictMode>,
+);
+
+RequireAuth.propTypes = {
+  children: PropTypes.node.isRequired,
+};

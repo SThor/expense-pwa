@@ -1,26 +1,29 @@
+import PropTypes from "prop-types";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useAppContext } from "./AppContext";
-import { getMostCommonCategoryFromTransactions } from "./utils/settleupUtils";
-import { getClosestLocation } from "./utils/ynabUtils";
-import { useGeolocation } from "./hooks/useGeolocation";
-import AppToggles from "./components/AppToggles";
-import AccountToggles from "./components/AccountToggles";
-import AmountSection from "./components/AmountSection";
-import SwileAmountSection from "./components/SwileAmountSection";
-import DetailsSection from "./components/DetailsSection";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
-import "./index.css";
+
 import {
   fetchSettleUpUserGroups,
   fetchSettleUpGroup,
   fetchSettleUpMembers,
   fetchSettleUpTransactions,
 } from "./api/settleup.js";
+import { useAppContext } from "./AppContext.jsx";
+import AccountToggles from "./components/AccountToggles.jsx";
+import AmountSection from "./components/AmountSection.jsx";
+import AppToggles from "./components/AppToggles.jsx";
+import DetailsSection from "./components/DetailsSection.jsx";
+import SwileAmountSection from "./components/SwileAmountSection.jsx";
 import {
-  DEFAULT_SETTLEUP_CATEGORY,
   DEFAULT_SWILE_MILLIUNITS,
   DEBOUNCE_AUTOFILL,
+  DEFAULT_CURRENCY,
 } from "./constants";
+import { useGeolocation } from "./hooks/useGeolocation";
+import { formStatePropType } from "./propTypes.js";
+import { getMostCommonCategoryFromTransactions } from "./utils/settleupUtils";
+import { getClosestLocation } from "./utils/ynabUtils.js";
+import "./index.css";
 
 export default function App({ onSubmit, formState, setFormState }) {
   const { ynabAPI, budgetId, setAccounts } = useAppContext();
@@ -32,7 +35,8 @@ export default function App({ onSubmit, formState, setFormState }) {
   const userPosition = useGeolocation();
 
   // SettleUp integration state
-  const { settleUpToken, settleUpUserId, settleUpLoading, settleUpError } = useAppContext();
+  const { settleUpToken, settleUpUserId, settleUpLoading, settleUpError } =
+    useAppContext();
   const [settleUpGroups, setSettleUpGroups] = useState(null);
   const [settleUpTestGroup, setSettleUpTestGroup] = useState(null);
   const [settleUpResult, setSettleUpResult] = useState("");
@@ -94,15 +98,9 @@ export default function App({ onSubmit, formState, setFormState }) {
   // Fetch payee locations after payees are loaded
   useEffect(() => {
     if (!ynabAPI || !budgetId || payees.length === 0) return;
-    async function fetchLocations() {
-      try {
-        const res = await ynabAPI.payeeLocations.getPayeeLocations(budgetId);
-        setPayeeLocations(res.data.payee_locations);
-      } catch (e) {
-        // Ignore location errors for now
-      }
-    }
-    fetchLocations();
+    ynabAPI.payeeLocations.getPayeeLocations(budgetId).then((res) => {
+      setPayeeLocations(res.data.payee_locations);
+    });
   }, [ynabAPI, budgetId, payees.length]);
 
   // Sort payees: by proximity, then alpha
@@ -111,7 +109,8 @@ export default function App({ onSubmit, formState, setFormState }) {
       const locA = getClosestLocation(a.id, payeeLocations, userPosition);
       const locB = getClosestLocation(b.id, payeeLocations, userPosition);
       if (userPosition && locA && locB) {
-        if (locA.distance !== locB.distance) return locA.distance - locB.distance;
+        if (locA.distance !== locB.distance)
+          return locA.distance - locB.distance;
       } else if (userPosition && (locA || locB)) {
         return locA ? -1 : 1;
       }
@@ -122,7 +121,9 @@ export default function App({ onSubmit, formState, setFormState }) {
   // Memoized closest payees (top 3 by proximity)
   const closestPayees = useMemo(() => {
     if (!userPosition || !payeeLocations.length) return [];
-    const payeesWithLoc = payees.filter(p => getClosestLocation(p.id, payeeLocations, userPosition));
+    const payeesWithLoc = payees.filter((p) =>
+      getClosestLocation(p.id, payeeLocations, userPosition),
+    );
     const sorted = sortPayees(payeesWithLoc);
     return sorted.slice(0, 3);
   }, [payees, userPosition, payeeLocations]);
@@ -132,25 +133,33 @@ export default function App({ onSubmit, formState, setFormState }) {
     const groups = [];
     if (closestPayees.length > 0) {
       groups.push({
-        label: 'Closest to you',
-        items: closestPayees.map(p => ({ value: p.id, label: p.name })),
+        label: "Closest to you",
+        items: closestPayees.map((p) => ({ value: p.id, label: p.name })),
       });
     }
     groups.push({
       label: "Saved Payees",
-      items: sortPayees(payees.filter(p => !p.transfer_account_id && !closestPayees.some(cp => cp.id === p.id))).map(p => ({
+      items: sortPayees(
+        payees.filter(
+          (p) =>
+            !p.transfer_account_id &&
+            !closestPayees.some((cp) => cp.id === p.id),
+        ),
+      ).map((p) => ({
         value: p.id,
         label: p.name,
       })),
     });
     groups.push({
       label: "Payments and Transfers",
-      items: sortPayees(payees.filter(p => p.transfer_account_id)).map(p => ({
-        value: p.id,
-        label: p.name,
-      })),
+      items: sortPayees(payees.filter((p) => p.transfer_account_id)).map(
+        (p) => ({
+          value: p.id,
+          label: p.name,
+        }),
+      ),
     });
-    return groups.filter(g => g.items.length > 0);
+    return groups.filter((g) => g.items.length > 0);
   }, [payees, userPosition, payeeLocations, closestPayees]);
 
   // Memoized grouped categories for autocomplete
@@ -164,34 +173,6 @@ export default function App({ onSubmit, formState, setFormState }) {
     }))
     .filter((group) => group.items.length > 0);
 
-  // Handlers for payee/category selection (update lifted state)
-  const handlePayeeChange = (val, item) => {
-    setFormState({
-      ...formState,
-      payee: val,
-      payeeId: item && item.value ? item.value : ""
-    });
-  };
-  const handleCategoryChange = (val, item) => {
-    let newSettleUpCategory = formState.settleUpCategory;
-    if (
-      newSettleUpCategory === DEFAULT_SETTLEUP_CATEGORY &&
-      item && item.label
-    ) {
-      // Regex to match emoji at the start
-      const emojiMatch = item.label.match(/^\p{Emoji}/u);
-      if (emojiMatch) {
-        newSettleUpCategory = emojiMatch[0];
-      }
-    }
-    setFormState({
-      ...formState,
-      category: val,
-      categoryId: item && item.value ? item.value : "",
-      settleUpCategory: newSettleUpCategory
-    });
-  };
-
   // Fetch SettleUp groups on mount if token/userId available
   useEffect(() => {
     if (!settleUpLoading && !settleUpError && settleUpToken && settleUpUserId) {
@@ -202,7 +183,7 @@ export default function App({ onSubmit, formState, setFormState }) {
           setSettleUpResult("");
         })
         .catch((err) =>
-          setSettleUpResult("Error fetching groups: " + err.message)
+          setSettleUpResult("Error fetching groups: " + err.message),
         );
     }
   }, [settleUpLoading, settleUpError, settleUpToken, settleUpUserId]);
@@ -227,21 +208,13 @@ export default function App({ onSubmit, formState, setFormState }) {
         } catch (err) {
           setSettleUpResult("Error fetching group: " + err.message);
         }
-        if (
-          data &&
-          data.name &&
-          data.name.trim().toLowerCase() === "test group"
-        ) {
-          found = { groupId, ...data };
-          break;
-        }
       }
       if (!found && groupIds.length > 0) {
         const groupId = groupIds[0];
         const data = await fetchSettleUpGroup(settleUpToken, groupId);
         found = { groupId, ...data };
         setSettleUpResult(
-          "No group named 'test group' found. Using your first group instead."
+          "No group named 'test group' found. Using your first group instead.",
         );
       } else {
         setSettleUpResult(found ? "" : "No group named 'test group' found.");
@@ -260,8 +233,10 @@ export default function App({ onSubmit, formState, setFormState }) {
           const arr = Object.entries(data).map(([id, m]) => ({ id, ...m }));
           setFormState((prev) => ({
             ...prev,
-            settleUpForWhomIds: arr.filter((m) => m.active !== false).map((m) => m.id),
-            settleUpPayerId: arr[0]?.id || ""
+            settleUpForWhomIds: arr
+              .filter((m) => m.active !== false)
+              .map((m) => m.id),
+            settleUpPayerId: arr[0]?.id || "",
           }));
         }
       })
@@ -270,25 +245,35 @@ export default function App({ onSubmit, formState, setFormState }) {
       });
     setFormState((prev) => ({
       ...prev,
-      settleUpCurrency: settleUpTestGroup?.convertedToCurrency || DEFAULT_CURRENCY
+      settleUpCurrency:
+        settleUpTestGroup?.convertedToCurrency || DEFAULT_CURRENCY,
     }));
   }, [settleUpTestGroup, settleUpToken]);
 
   // Autofill SettleUp category (emoji) based on previous transactions with same payee/description
   useEffect(() => {
-    if (!formState.payee || !settleUpTestGroup?.groupId || !settleUpToken) return;
+    if (!formState.payee || !settleUpTestGroup?.groupId || !settleUpToken)
+      return;
     // Debounce: only fetch after user stops typing for DEBOUNCE_AUTOFILL ms
     const handler = setTimeout(async () => {
       try {
-        const data = await fetchSettleUpTransactions(settleUpToken, settleUpTestGroup.groupId);
+        const data = await fetchSettleUpTransactions(
+          settleUpToken,
+          settleUpTestGroup.groupId,
+        );
         if (!data) return;
         const transactions = Object.values(data);
         // Use shared utility with 'contains' match
-        const mostCommon = getMostCommonCategoryFromTransactions(transactions, formState.payee, 'purpose', 'contains');
+        const mostCommon = getMostCommonCategoryFromTransactions(
+          transactions,
+          formState.payee,
+          "purpose",
+          "contains",
+        );
         if (mostCommon) {
-          setSettleUpCategory(mostCommon);
+          setFormState({ ...formState, settleUpCategory: mostCommon });
         }
-      } catch (e) {
+      } catch {
         // ignore autofill errors
       }
     }, DEBOUNCE_AUTOFILL);
@@ -305,9 +290,23 @@ export default function App({ onSubmit, formState, setFormState }) {
   // Reveal logic
   useEffect(() => {
     setShowAccounts(formState.target.ynab && formState.amountMilliunits !== 0);
-    setShowDetails(formState.amountMilliunits !== 0 && (!formState.target.ynab || formState.account.bourso || formState.account.swile));
-    setShowSwile(formState.target.ynab && formState.amountMilliunits !== 0 && formState.account.swile);
-  }, [formState.amountMilliunits, formState.target.ynab, formState.account.bourso, formState.account.swile]);
+    setShowDetails(
+      formState.amountMilliunits !== 0 &&
+        (!formState.target.ynab ||
+          formState.account.bourso ||
+          formState.account.swile),
+    );
+    setShowSwile(
+      formState.target.ynab &&
+        formState.amountMilliunits !== 0 &&
+        formState.account.swile,
+    );
+  }, [
+    formState.amountMilliunits,
+    formState.target.ynab,
+    formState.account.bourso,
+    formState.account.swile,
+  ]);
 
   // Preload toggle button images
   useEffect(() => {
@@ -327,40 +326,64 @@ export default function App({ onSubmit, formState, setFormState }) {
     <form onSubmit={onSubmit} className="space-y-4">
       <AppToggles
         target={formState.target}
-        setTarget={target => setFormState({ ...formState, target })}
+        setTarget={(target) => setFormState({ ...formState, target })}
       />
       <TransitionGroup component={null}>
-        <CSSTransition key="amount" timeout={300} classNames="fade-slide" nodeRef={amountRef}>
+        <CSSTransition
+          key="amount"
+          timeout={300}
+          classNames="fade-slide"
+          nodeRef={amountRef}
+        >
           <AmountSection
             ref={amountRef}
             amountMilliunits={formState.amountMilliunits || 0}
-            setAmountMilliunits={val => setFormState({ ...formState, amountMilliunits: val })}
+            setAmountMilliunits={(val) =>
+              setFormState({ ...formState, amountMilliunits: val })
+            }
           />
         </CSSTransition>
 
         {showAccounts && (
-          <CSSTransition key="accounts" timeout={300} classNames="fade-slide" nodeRef={accountsRef}>
+          <CSSTransition
+            key="accounts"
+            timeout={300}
+            classNames="fade-slide"
+            nodeRef={accountsRef}
+          >
             <AccountToggles
               ref={accountsRef}
               account={formState.account}
-              setAccount={account => setFormState({ ...formState, account })}
+              setAccount={(account) => setFormState({ ...formState, account })}
             />
           </CSSTransition>
         )}
 
         {showSwile && (
-          <CSSTransition key="swile" timeout={300} classNames="fade-slide" nodeRef={swileRef}>
+          <CSSTransition
+            key="swile"
+            timeout={300}
+            classNames="fade-slide"
+            nodeRef={swileRef}
+          >
             <SwileAmountSection
               ref={swileRef}
               swileMilliunits={formState.swileMilliunits}
-              setSwileMilliunits={val => setFormState({ ...formState, swileMilliunits: val })}
+              setSwileMilliunits={(val) =>
+                setFormState({ ...formState, swileMilliunits: val })
+              }
               max={formState.amountMilliunits}
             />
           </CSSTransition>
         )}
 
         {showDetails && (
-          <CSSTransition key="details" timeout={300} classNames="fade-slide" nodeRef={detailsRef}>
+          <CSSTransition
+            key="details"
+            timeout={300}
+            classNames="fade-slide"
+            nodeRef={detailsRef}
+          >
             <DetailsSection
               ref={detailsRef}
               formState={formState}
@@ -370,7 +393,6 @@ export default function App({ onSubmit, formState, setFormState }) {
               categories={categories}
               categoryGroups={categoryGroups}
               suggestedCategoryIds={suggestedCategoryIds}
-              handleCategoryChange={handleCategoryChange}
             />
           </CSSTransition>
         )}
@@ -385,20 +407,28 @@ export default function App({ onSubmit, formState, setFormState }) {
       )}
       <button
         className={`bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full ${
-          (!formState.target?.ynab && !formState.target?.settleup) || (formState.target?.ynab && !formState.account?.bourso && !formState.account?.swile)
-            ? ' opacity-50 cursor-not-allowed' : ''
+          (!formState.target?.ynab && !formState.target?.settleup) ||
+          (formState.target?.ynab &&
+            !formState.account?.bourso &&
+            !formState.account?.swile)
+            ? " opacity-50 cursor-not-allowed"
+            : ""
         }`}
         type="submit"
         disabled={
           (!formState.target?.ynab && !formState.target?.settleup) ||
-          (formState.target?.ynab && !formState.account?.bourso && !formState.account?.swile)
+          (formState.target?.ynab &&
+            !formState.account?.bourso &&
+            !formState.account?.swile)
         }
         title={
           !formState.target?.ynab && !formState.target?.settleup
-            ? 'Enable YNAB and/or SettleUp to add a transaction.'
-            : formState.target?.ynab && !formState.account?.bourso && !formState.account?.swile
-            ? 'Enable either BoursoBank or Swile account to add a YNAB transaction.'
-            : undefined
+            ? "Enable YNAB and/or SettleUp to add a transaction."
+            : formState.target?.ynab &&
+                !formState.account?.bourso &&
+                !formState.account?.swile
+              ? "Enable either BoursoBank or Swile account to add a YNAB transaction."
+              : undefined
         }
       >
         Add Transaction
@@ -406,3 +436,9 @@ export default function App({ onSubmit, formState, setFormState }) {
     </form>
   );
 }
+
+App.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+  formState: formStatePropType.isRequired,
+  setFormState: PropTypes.func.isRequired,
+};

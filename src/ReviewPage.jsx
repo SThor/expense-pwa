@@ -1,28 +1,19 @@
-import { useNavigate } from "react-router-dom";
-import { useAppContext } from "./AppContext";
-import { getAccountIdByName } from "./utils/ynabUtils";
-import { addSettleUpTransaction } from "./api/settleup";
-import ReviewSection from "./components/ReviewSection";
-import CenteredCardLayout from "./components/CenteredCardLayout";
+import PropTypes from "prop-types";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function ReviewPage({
-  formState,
-  onBack,
-  onSubmitted,
-}) {
+import { addSettleUpTransaction } from "./api/settleup";
+import { useAppContext } from "./AppContext.jsx";
+import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
+import ReviewSection from "./components/ReviewSection.jsx";
+import { formStatePropType } from "./propTypes.js";
+import { getAccountIdByName } from "./utils/ynabUtils";
+
+export default function ReviewPage({ formState, onBack, onSubmitted }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
-  const {
-    ynabAPI,
-    budgetId,
-    settleUpToken,
-    settleUpUserId,
-    settleUpLoading,
-    settleUpError,
-    accounts,
-  } = useAppContext();
+  const { ynabAPI, budgetId, settleUpToken, accounts } = useAppContext();
 
   async function handleYnabSubmit() {
     if (!ynabAPI || !budgetId) {
@@ -37,7 +28,8 @@ export default function ReviewPage({
         setResult("No matching YNAB account found for Swile or Bourso.");
         return;
       }
-      const transferInflowMilliunits = formState.swileMilliunits - formState.amountMilliunits;
+      const transferInflowMilliunits =
+        formState.swileMilliunits - formState.amountMilliunits;
       const boursoTransferPayeeId = "eabe1e60-fa92-40f7-8636-5c8bcbf1404a";
       const transaction = {
         account_id: swileAccountId,
@@ -78,7 +70,8 @@ export default function ReviewPage({
     let accountId = null;
     if (formState.account.bourso)
       accountId = getAccountIdByName(accounts, "Boursorama");
-    else if (formState.account.swile) accountId = getAccountIdByName(accounts, "Swile");
+    else if (formState.account.swile)
+      accountId = getAccountIdByName(accounts, "Swile");
     else accountId = getAccountIdByName(accounts, "Boursorama");
     if (!accountId) {
       setResult("No matching YNAB account found for the selected button.");
@@ -96,8 +89,10 @@ export default function ReviewPage({
     };
     try {
       setLoading(true);
-      const res = await ynabAPI.transactions.createTransaction(budgetId, { transaction });
-      setResult("✅ YNAB transaction sent!");
+      const res = await ynabAPI.transactions.createTransaction(budgetId, {
+        transaction,
+      });
+      setResult("✅ YNAB transaction sent!", JSON.stringify(res, null, 2));
     } catch (err) {
       setResult("YNAB API error: " + (err?.message || err));
     } finally {
@@ -107,23 +102,35 @@ export default function ReviewPage({
 
   async function handleSettleUpSubmit() {
     setResult("");
-    if (!settleUpToken || !formState.settleUpTestGroup?.groupId || formState.amountMilliunits === 0 || !formState.settleUpPayerId || !formState.settleUpForWhomIds?.length) {
+    if (
+      !settleUpToken ||
+      !formState.settleUpTestGroup?.groupId ||
+      formState.amountMilliunits === 0 ||
+      !formState.settleUpPayerId ||
+      !formState.settleUpForWhomIds?.length
+    ) {
       setResult("❌ Please fill all required fields before submitting.");
       return;
     }
     const amount = (-formState.amountMilliunits / 1000).toFixed(2);
     const now = Date.now();
     const tx = {
-      category: formState.settleUpCategory === "∅" ? "" : formState.settleUpCategory,
+      category:
+        formState.settleUpCategory === "∅" ? "" : formState.settleUpCategory,
       currencyCode: formState.settleUpCurrency || "EUR",
       dateTime: now,
       items: [
         {
           amount: amount,
-          forWhom: formState.settleUpForWhomIds.map((id) => ({ memberId: id, weight: "1" })),
+          forWhom: formState.settleUpForWhomIds.map((id) => ({
+            memberId: id,
+            weight: "1",
+          })),
         },
       ],
-      purpose: formState.payee + (formState.description ? ` - ${formState.description}` : ""),
+      purpose:
+        formState.payee +
+        (formState.description ? ` - ${formState.description}` : ""),
       type: "expense",
       whoPaid: [{ memberId: formState.settleUpPayerId, weight: "1" }],
       fixedExchangeRate: false,
@@ -132,7 +139,11 @@ export default function ReviewPage({
     };
     try {
       setLoading(true);
-      const data = await addSettleUpTransaction(settleUpToken, formState.settleUpTestGroup.groupId, tx);
+      const data = await addSettleUpTransaction(
+        settleUpToken,
+        formState.settleUpTestGroup.groupId,
+        tx,
+      );
       if (data && data.name) {
         setResult("✅ SettleUp transaction sent!");
       } else {
@@ -154,8 +165,15 @@ export default function ReviewPage({
   return (
     <CenteredCardLayout>
       <div className="flex justify-between mb-4">
-        <button onClick={onBack || (() => navigate("/"))} className="text-sky-600 underline">Back to Edit</button>
-        <a href="/login" className="text-sky-600 underline">Logout</a>
+        <button
+          onClick={onBack || (() => navigate("/"))}
+          className="text-sky-600 underline"
+        >
+          Back to Edit
+        </button>
+        <a href="/login" className="text-sky-600 underline">
+          Logout
+        </a>
       </div>
       <ReviewSection {...formState} />
       {result && (
@@ -176,3 +194,9 @@ export default function ReviewPage({
     </CenteredCardLayout>
   );
 }
+
+ReviewPage.propTypes = {
+  formState: formStatePropType.isRequired,
+  onBack: PropTypes.func,
+  onSubmitted: PropTypes.func,
+};
