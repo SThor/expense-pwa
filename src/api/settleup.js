@@ -54,10 +54,44 @@ async function callApi(endpoint, token, options = {}) {
   }
   if (!token) throw new Error("No auth token");
   const url = `${endpoint}?auth=${token}`;
+  console.log("[SettleUp API] Making request:", {
+    method: options.method || "GET",
+    url: SETTLEUP_API_BASE + "" + url,
+    hasData: !!options.data,
+    dataSize: options.data ? JSON.stringify(options.data).length : 0,
+  });
   try {
     const res = await api({ url, ...options });
+    console.log("[SettleUp API] Response:", {
+      status: res.status,
+      data: res.data,
+    });
     return res.data;
   } catch (err) {
+    console.error("[SettleUp API] Error:", {
+      endpoint,
+      method: options.method || "GET",
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      message: err.message,
+      headers: err.response?.headers,
+      // Check for rate limiting indicators
+      rateLimitHeaders: {
+        'x-ratelimit-limit': err.response?.headers?.['x-ratelimit-limit'],
+        'x-ratelimit-remaining': err.response?.headers?.['x-ratelimit-remaining'],
+        'x-ratelimit-reset': err.response?.headers?.['x-ratelimit-reset'],
+        'retry-after': err.response?.headers?.['retry-after'],
+      }
+    });
+    
+    // Check if this might be rate limiting
+    if (err.response?.status === 429) {
+      throw new Error("Rate limited - too many requests. Please wait and try again.");
+    } else if (err.response?.status === 401 && err.response?.headers?.['retry-after']) {
+      throw new Error("Rate limited (401 with retry-after). Please wait and try again.");
+    }
+    
     throw new Error(err.response?.data?.error || err.message);
   }
 }
@@ -135,6 +169,3 @@ export function fetchSettleUpUserGroupNode(token, userId, groupId) {
     );
   return callApi(`/userGroups/${userId}/${groupId}.json`, token);
 }
-
-// If you need to use the Firebase JS SDK for other advanced features, you can initialize it here.
-// But for authentication and REST API usage, always use getSettleUpTokenFromEnv above.

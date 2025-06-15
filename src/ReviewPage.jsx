@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { addSettleUpTransaction } from "./api/settleup";
+import { addSettleUpTransaction, fetchSettleUpPermissions, fetchSettleUpUserGroupNode } from "./api/settleup";
 import { useAppContext } from "./AppContext.jsx";
 import { useAuth } from "./AuthProvider.jsx";
 import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
@@ -104,6 +104,13 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
 
   async function handleSettleUpSubmit() {
     setResult("");
+    console.warn("[ReviewPage] checks:", {
+      token,
+      groupId: formState.settleUpGroup?.groupId,
+      amountMilliunits: formState.amountMilliunits,
+      settleUpPayerId: formState.settleUpPayerId,
+      settleUpMembers: formState.settleUpMembers,
+    });
     if (
       !token ||
       !formState.settleUpGroup?.groupId ||
@@ -115,6 +122,28 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
       setResult("❌ Please fill all required fields before submitting.");
       return;
     }
+    const permissions = await fetchSettleUpPermissions(token, formState.settleUpGroup.groupId);
+    console.log("[ReviewPage] SettleUp permissions:", permissions);
+    console.log("[ReviewPage] SettleUp permission for user:", permissions[user.uid]);
+    
+    // Debug: Check if the user is a member and what member ID they have
+    console.log("[ReviewPage] All members:", formState.settleUpMembers);
+    console.log("[ReviewPage] User object:", user);
+    console.log("[ReviewPage] Payer ID selected:", formState.settleUpPayerId);
+    
+    // Debug: Check the userGroups mapping for this user and group
+    try {
+      const userGroupInfo = await fetchSettleUpUserGroupNode(token, user.uid, formState.settleUpGroup.groupId);
+      console.log("[ReviewPage] UserGroup mapping:", userGroupInfo);
+      console.log("[ReviewPage] Member ID from userGroup:", userGroupInfo?.member);
+    } catch (err) {
+      console.error("[ReviewPage] Error fetching userGroup mapping:", err);
+    }
+    
+    // Check if the selected payer ID exists in members
+    const selectedMember = formState.settleUpMembers?.find(m => m.id === formState.settleUpPayerId);
+    console.log("[ReviewPage] Selected member details:", selectedMember);
+    
     if (!permissions[user.uid] || permissions[user.uid].level < 20) {
       console.warn("[ReviewPage] Insufficient permissions for user:", user.uid);
       setResult("❌ You do not have permission to submit this transaction.");
@@ -142,6 +171,8 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
       type: "expense",
       whoPaid: [{ memberId: formState.settleUpPayerId, weight: "1" }],
     };
+    console.log("[ReviewPage] Transaction payload:", JSON.stringify(tx, null, 2));
+
     try {
       setLoading(true);
       const data = await addSettleUpTransaction(
@@ -155,6 +186,7 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
         setResult("Error adding transaction: " + JSON.stringify(data));
       }
     } catch (e) {
+      console.error("[ReviewPage] SettleUp transaction error:", e);
       setResult("Error adding transaction: " + e.message);
     } finally {
       setLoading(false);
@@ -162,6 +194,8 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
   }
 
   async function handleSubmit() {
+    console.log("[ReviewPage] handleSubmit called with formState:", formState);
+    console.log("[ReviewPage] Submitting to", formState.target);
     if (formState.target.ynab) await handleYnabSubmit();
     if (formState.target.settleup) await handleSettleUpSubmit();
     if (onSubmitted) onSubmitted();

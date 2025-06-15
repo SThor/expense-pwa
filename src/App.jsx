@@ -174,6 +174,7 @@ export default function App({ onSubmit, formState, setFormState }) {
   // Fetch SettleUp groups on mount if token/userId available
   useEffect(() => {
     if (!settleUpToken || !settleUpUser?.uid) return;
+    console.log("[SettleUp] Fetching groups for UID:", settleUpUser.uid);
     setSettleUpResult("Loading groups...");
     fetchSettleUpUserGroups(settleUpToken, settleUpUser.uid)
       .then((data) => {
@@ -201,6 +202,7 @@ export default function App({ onSubmit, formState, setFormState }) {
             data.name &&
             data.name.trim().toLowerCase() === import.meta.env.VITE_SETTLEUP_GROUP_NAME.toLowerCase()
           ) {
+            console.log("[SettleUp] Found test group:", data);
             found = { groupId, ...data };
             break;
           }
@@ -212,6 +214,7 @@ export default function App({ onSubmit, formState, setFormState }) {
         const groupId = groupIds[0];
         const data = await fetchSettleUpGroup(settleUpToken, groupId);
         found = { groupId, ...data };
+        console.log("[SettleUp] Using first group:", data);
         setSettleUpResult(
           "No group named '" + import.meta.env.VITE_SETTLEUP_GROUP_NAME + "' found. Using your first group instead.",
         );
@@ -233,6 +236,7 @@ export default function App({ onSubmit, formState, setFormState }) {
       .then((data) => {
         if (data) {
           const arr = Object.entries(data).map(([id, m]) => ({ id, ...m }));
+          console.log("[SettleUp] Members fetched:", arr);
           setFormState((prev) => ({
             ...prev,
             settleUpMembers: arr
