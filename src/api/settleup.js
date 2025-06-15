@@ -1,59 +1,7 @@
-// Firebase Auth REST API login for Settle Up
-// Returns both idToken and userId (localId)
-export async function getSettleUpTokenFromEnv() {
-  const email = import.meta.env.VITE_SETTLEUP_EMAIL;
-  const password = import.meta.env.VITE_SETTLEUP_PASSWORD;
-  const apiKey = import.meta.env.VITE_SETTLEUP_API_KEY;
-  if (!email || !password || !apiKey)
-    throw new Error("Settle Up credentials not set in .env");
-  const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, returnSecureToken: true }),
-  });
-  if (!res.ok)
-    throw new Error("Failed to authenticate with Settle Up: " + res.statusText);
-  const data = await res.json();
-  return { token: data.idToken, userId: data.localId };
-}
+import axios from "axios";
 
-const SETTLEUP_API_BASE = "https://settle-up-sandbox.firebaseio.com";
-
-// Centralized SettleUp API dummy bypass (for development/testing)
+const SETTLEUP_API_BASE = import.meta.env.VITE_FIREBASE_DATABASE_URL;
 const SETTLEUP_DUMMY_MODE = import.meta.env.VITE_SETTLEUP_DUMMY === "true";
-
-/**
- * Build SettleUp API URL
- * @param {string} endpoint - API endpoint
- * @param {string} token - Firebase auth token
- * @returns {string} - Full API URL
- */
-function buildSettleUpUrl(endpoint, token) {
-  if (!token) throw new Error("Missing token for SettleUp API call");
-  return `${SETTLEUP_API_BASE}${endpoint}?auth=${token}`;
-}
-
-/**
- * Handle fetch response and throw on error
- * @param {Response} res - fetch response
- * @returns {Promise<any>} - parsed JSON
- */
-async function handleSettleUpResponse(res) {
-  if (!res.ok) {
-    let msg = res.statusText;
-    try {
-      const err = await res.json();
-      if (err && err.error) msg = err.error;
-    } catch (error) {
-      throw new Error(
-        "Failed to parse error response from Settle Up: " + error.message,
-      );
-    }
-    throw new Error(msg || "Unknown error");
-  }
-  return res.json();
-}
 
 function dummyResponse(endpoint, method = "GET") {
   // You can expand this with more realistic dummy data as needed
@@ -94,22 +42,24 @@ function dummyResponse(endpoint, method = "GET") {
   return Promise.resolve({});
 }
 
-/**
- * Generic SettleUp API call
- * @param {string} endpoint
- * @param {string} token
- * @param {object} [options] - fetch options (method, body, etc)
- * @returns {Promise<any>}
- */
-async function settleUpApiCall(endpoint, token, options) {
+const api = axios.create({
+  baseURL: SETTLEUP_API_BASE,
+  headers: { "Content-Type": "application/json" },
+});
+
+async function callApi(endpoint, token, options = {}) {
   if (SETTLEUP_DUMMY_MODE) {
-    const method = options?.method || "GET";
-    const body = options?.body;
-    return dummyResponse(endpoint, method, body);
+    const method = options.method || "GET";
+    return dummyResponse(endpoint, method, options.body);
   }
-  const url = buildSettleUpUrl(endpoint, token);
-  const res = await fetch(url, options);
-  return handleSettleUpResponse(res);
+  if (!token) throw new Error("No auth token");
+  const url = `${endpoint}?auth=${token}`;
+  try {
+    const res = await api({ url, ...options });
+    return res.data;
+  } catch (err) {
+    throw new Error(err.response?.data?.error || err.message);
+  }
 }
 
 /**
@@ -118,73 +68,72 @@ async function settleUpApiCall(endpoint, token, options) {
  * @param {string} userId - SettleUp user ID
  * @returns {Promise<object>} - User groups object (or empty object)
  */
-export async function fetchSettleUpUserGroups(token, userId) {
+export function fetchSettleUpUserGroups(token, userId) {
   if (!token || !userId)
     throw new Error("Missing token or userId for SettleUp user groups fetch");
-  const data = await settleUpApiCall(`/userGroups/${userId}.json`, token);
-  return data || {};
+  return callApi(`/userGroups/${userId}.json`, token);
 }
 
 /**
  * Fetch SettleUp group details by groupId
  */
-export async function fetchSettleUpGroup(token, groupId) {
+export function fetchSettleUpGroup(token, groupId) {
   if (!token || !groupId)
     throw new Error("Missing token or groupId for SettleUp group fetch");
-  return settleUpApiCall(`/groups/${groupId}.json`, token);
+  return callApi(`/groups/${groupId}.json`, token);
 }
 
 /**
  * Fetch SettleUp group members
  */
-export async function fetchSettleUpMembers(token, groupId) {
+export function fetchSettleUpMembers(token, groupId) {
   if (!token || !groupId)
     throw new Error("Missing token or groupId for Settle Up members fetch");
-  return settleUpApiCall(`/members/${groupId}.json`, token);
+  return callApi(`/members/${groupId}.json`, token);
 }
 
 /**
  * Fetch SettleUp transactions for a group
  */
-export async function fetchSettleUpTransactions(token, groupId) {
+export function fetchSettleUpTransactions(token, groupId) {
   if (!token || !groupId)
     throw new Error("Missing token or groupId for SettleUp transactions fetch");
-  return settleUpApiCall(`/transactions/${groupId}.json`, token);
+  return callApi(`/transactions/${groupId}.json`, token);
 }
 
 /**
  * Add a SettleUp transaction to a group
  */
-export async function addSettleUpTransaction(token, groupId, tx) {
+export function addSettleUpTransaction(token, groupId, tx) {
   if (!token || !groupId || !tx)
     throw new Error(
       "Missing token, groupId, or tx for SettleUp add transaction",
     );
-  return settleUpApiCall(`/transactions/${groupId}.json`, token, {
+  return callApi(`/transactions/${groupId}.json`, token, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(tx),
+    data: JSON.stringify(tx),
   });
 }
 
 /**
  * Fetch SettleUp permissions for a group
  */
-export async function fetchSettleUpPermissions(token, groupId) {
+export function fetchSettleUpPermissions(token, groupId) {
   if (!token || !groupId)
     throw new Error("Missing token or groupId for SettleUp permissions fetch");
-  return settleUpApiCall(`/permissions/${groupId}.json`, token);
+  return callApi(`/permissions/${groupId}.json`, token);
 }
 
 /**
  * Fetch SettleUp userGroup node for a user and group
  */
-export async function fetchSettleUpUserGroupNode(token, userId, groupId) {
+export function fetchSettleUpUserGroupNode(token, userId, groupId) {
   if (!token || !userId || !groupId)
     throw new Error(
       "Missing token, userId, or groupId for SettleUp userGroup node fetch",
     );
-  return settleUpApiCall(`/userGroups/${userId}/${groupId}.json`, token);
+  return callApi(`/userGroups/${userId}/${groupId}.json`, token);
 }
 
 // If you need to use the Firebase JS SDK for other advanced features, you can initialize it here.

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { addSettleUpTransaction } from "./api/settleup";
 import { useAppContext } from "./AppContext.jsx";
+import { useAuth } from "./AuthProvider.jsx";
 import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
 import ReviewSection from "./components/ReviewSection.jsx";
 import { formStatePropType } from "./propTypes.js";
@@ -13,7 +14,8 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
-  const { ynabAPI, budgetId, settleUpToken, accounts } = useAppContext();
+  const { ynabAPI, budgetId, accounts } = useAppContext();
+  const { token, user } = useAuth();
 
   async function handleYnabSubmit() {
     if (!ynabAPI || !budgetId) {
@@ -103,13 +105,19 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
   async function handleSettleUpSubmit() {
     setResult("");
     if (
-      !settleUpToken ||
-      !formState.settleUpTestGroup?.groupId ||
+      !token ||
+      !formState.settleUpGroup?.groupId ||
       formState.amountMilliunits === 0 ||
       !formState.settleUpPayerId ||
-      !formState.settleUpForWhomIds?.length
+      !formState.settleUpMembers?.length
     ) {
+      console.warn("[ReviewPage] Missing required fields for SettleUp submit");
       setResult("❌ Please fill all required fields before submitting.");
+      return;
+    }
+    if (!permissions[user.uid] || permissions[user.uid].level < 20) {
+      console.warn("[ReviewPage] Insufficient permissions for user:", user.uid);
+      setResult("❌ You do not have permission to submit this transaction.");
       return;
     }
     const amount = (-formState.amountMilliunits / 1000).toFixed(2);
@@ -122,9 +130,9 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
       items: [
         {
           amount: amount,
-          forWhom: formState.settleUpForWhomIds.map((id) => ({
-            memberId: id,
-            weight: "1",
+          forWhom: formState.settleUpMembers.map((member) => ({
+            memberId: member.id,
+            weight: (member.defaultWeight || "1").toString(),
           })),
         },
       ],
@@ -133,15 +141,12 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
         (formState.description ? ` - ${formState.description}` : ""),
       type: "expense",
       whoPaid: [{ memberId: formState.settleUpPayerId, weight: "1" }],
-      fixedExchangeRate: false,
-      exchangeRates: undefined,
-      receiptUrl: undefined,
     };
     try {
       setLoading(true);
       const data = await addSettleUpTransaction(
-        settleUpToken,
-        formState.settleUpTestGroup.groupId,
+        token,
+        formState.settleUpGroup.groupId,
         tx,
       );
       if (data && data.name) {

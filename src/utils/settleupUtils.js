@@ -1,6 +1,3 @@
-// src/utils/settleupUtils.js
-// Utility for SettleUp autofill logic
-
 /**
  * Find the most common category (emoji) from transactions where the given field contains the input (case-insensitive, trimmed).
  * @param {Array} transactions - Array of transaction objects

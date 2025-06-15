@@ -9,6 +9,7 @@ import {
   fetchSettleUpTransactions,
 } from "./api/settleup.js";
 import { useAppContext } from "./AppContext.jsx";
+import { useAuth } from "./AuthProvider.jsx";
 import AccountToggles from "./components/AccountToggles.jsx";
 import AmountSection from "./components/AmountSection.jsx";
 import AppToggles from "./components/AppToggles.jsx";
@@ -27,6 +28,7 @@ import "./index.css";
 
 export default function App({ onSubmit, formState, setFormState }) {
   const { ynabAPI, budgetId, setAccounts } = useAppContext();
+  const { token: settleUpToken, user: settleUpUser } = useAuth();
   const [payees, setPayees] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoryGroups, setCategoryGroups] = useState([]);
@@ -35,10 +37,6 @@ export default function App({ onSubmit, formState, setFormState }) {
   const userPosition = useGeolocation();
 
   // SettleUp integration state
-  const { settleUpToken, settleUpUserId, settleUpLoading, settleUpError } =
-    useAppContext();
-  const [settleUpGroups, setSettleUpGroups] = useState(null);
-  const [settleUpTestGroup, setSettleUpTestGroup] = useState(null);
   const [settleUpResult, setSettleUpResult] = useState("");
 
   // Section reveal state
@@ -175,23 +173,24 @@ export default function App({ onSubmit, formState, setFormState }) {
 
   // Fetch SettleUp groups on mount if token/userId available
   useEffect(() => {
-    if (!settleUpLoading && !settleUpError && settleUpToken && settleUpUserId) {
-      setSettleUpResult("Loading groups...");
-      fetchSettleUpUserGroups(settleUpToken, settleUpUserId)
-        .then((data) => {
-          setSettleUpGroups(data);
-          setSettleUpResult("");
-        })
-        .catch((err) =>
-          setSettleUpResult("Error fetching groups: " + err.message),
-        );
-    }
-  }, [settleUpLoading, settleUpError, settleUpToken, settleUpUserId]);
+    if (!settleUpToken || !settleUpUser?.uid) return;
+    setSettleUpResult("Loading groups...");
+    fetchSettleUpUserGroups(settleUpToken, settleUpUser.uid)
+      .then((data) => {
+        console.log("[SettleUp] Groups fetched:", data);
+        setFormState((prev) => ({...prev, settleUpGroups: data}));
+        setSettleUpResult("");
+      })
+      .catch((err) => {
+        console.error("[SettleUp] Error fetching groups:", err);
+        setSettleUpResult("Error fetching groups: " + err.message);
+      });
+  }, [settleUpUser?.uid]);
 
   // Find test group or fallback to first group
   useEffect(() => {
-    if (!settleUpGroups || !settleUpToken || !settleUpUserId) return;
-    const groupIds = Object.keys(settleUpGroups);
+    if (!formState.settleUpGroups || !settleUpToken || !settleUpUser.uid) return;
+    const groupIds = Object.keys(formState.settleUpGroups);
     (async () => {
       let found = null;
       for (const groupId of groupIds) {
@@ -200,7 +199,7 @@ export default function App({ onSubmit, formState, setFormState }) {
           if (
             data &&
             data.name &&
-            data.name.trim().toLowerCase() === "test group"
+            data.name.trim().toLowerCase() === import.meta.env.VITE_SETTLEUP_GROUP_NAME.toLowerCase()
           ) {
             found = { groupId, ...data };
             break;
@@ -214,28 +213,30 @@ export default function App({ onSubmit, formState, setFormState }) {
         const data = await fetchSettleUpGroup(settleUpToken, groupId);
         found = { groupId, ...data };
         setSettleUpResult(
-          "No group named 'test group' found. Using your first group instead.",
+          "No group named '" + import.meta.env.VITE_SETTLEUP_GROUP_NAME + "' found. Using your first group instead.",
         );
       } else {
-        setSettleUpResult(found ? "" : "No group named 'test group' found.");
+        setSettleUpResult(found ? "" : "No group named '" + import.meta.env.VITE_SETTLEUP_GROUP_NAME + "' found.");
       }
-      setSettleUpTestGroup(found);
+      setFormState((prev) => ({
+        ...prev,
+        settleUpGroup: found,
+      }));
     })();
-  }, [settleUpGroups, settleUpToken, settleUpUserId]);
+  }, [formState.settleUpGroups, settleUpUser?.uid]);
 
-  // Fetch members when testGroup changes
+  // Fetch members when group changes
   useEffect(() => {
-    if (!settleUpTestGroup || !settleUpTestGroup.groupId || !settleUpToken)
+    if (!formState.settleUpGroup || !formState.settleUpGroup.groupId || !settleUpToken)
       return;
-    fetchSettleUpMembers(settleUpToken, settleUpTestGroup.groupId)
+    fetchSettleUpMembers(settleUpToken, formState.settleUpGroup.groupId)
       .then((data) => {
         if (data) {
           const arr = Object.entries(data).map(([id, m]) => ({ id, ...m }));
           setFormState((prev) => ({
             ...prev,
-            settleUpForWhomIds: arr
-              .filter((m) => m.active !== false)
-              .map((m) => m.id),
+            settleUpMembers: arr
+              .filter((m) => m.active !== false),
             settleUpPayerId: arr[0]?.id || "",
           }));
         }
@@ -246,20 +247,20 @@ export default function App({ onSubmit, formState, setFormState }) {
     setFormState((prev) => ({
       ...prev,
       settleUpCurrency:
-        settleUpTestGroup?.convertedToCurrency || DEFAULT_CURRENCY,
+        formState.settleUpGroup?.convertedToCurrency || DEFAULT_CURRENCY,
     }));
-  }, [settleUpTestGroup, settleUpToken]);
+  }, [formState.settleUpGroup, settleUpToken]);
 
   // Autofill SettleUp category (emoji) based on previous transactions with same payee/description
   useEffect(() => {
-    if (!formState.payee || !settleUpTestGroup?.groupId || !settleUpToken)
+    if (!formState.payee || !formState.settleUpGroup?.groupId || !settleUpToken)
       return;
     // Debounce: only fetch after user stops typing for DEBOUNCE_AUTOFILL ms
     const handler = setTimeout(async () => {
       try {
         const data = await fetchSettleUpTransactions(
           settleUpToken,
-          settleUpTestGroup.groupId,
+          formState.settleUpGroup.groupId,
         );
         if (!data) return;
         const transactions = Object.values(data);
@@ -278,7 +279,7 @@ export default function App({ onSubmit, formState, setFormState }) {
       }
     }, DEBOUNCE_AUTOFILL);
     return () => clearTimeout(handler);
-  }, [formState.payee, settleUpTestGroup?.groupId, settleUpToken]);
+  }, [formState.payee, formState.settleUpGroup?.groupId, settleUpToken]);
 
   // Reset swileMilliunits to default when toggles change
   useEffect(() => {
