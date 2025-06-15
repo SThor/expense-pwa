@@ -146,7 +146,7 @@ export function addSettleUpTransaction(token, groupId, tx) {
   return callApi(`/transactions/${groupId}.json`, token, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    data: JSON.stringify(tx),
+    data: tx,
   });
 }
 

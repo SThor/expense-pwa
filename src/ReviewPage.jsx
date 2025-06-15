@@ -153,7 +153,7 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
     const now = Date.now();
     const tx = {
       category:
-        formState.settleUpCategory === "∅" ? "" : formState.settleUpCategory,
+        formState.settleUpCategory === "∅" ? undefined : formState.settleUpCategory,
       currencyCode: formState.settleUpCurrency || "EUR",
       dateTime: now,
       items: [
@@ -170,6 +170,8 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
         (formState.description ? ` - ${formState.description}` : ""),
       type: "expense",
       whoPaid: [{ memberId: formState.settleUpPayerId, weight: "1" }],
+      exchangeRates: [],
+      fixedExchangeRate: true,
     };
     console.log("[ReviewPage] Transaction payload:", JSON.stringify(tx, null, 2));
 
