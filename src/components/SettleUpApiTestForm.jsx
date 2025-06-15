@@ -159,7 +159,7 @@ export default function SettleUpApiTestForm({ setResult }) {
     const amount = (-amountMilliunits / 1000).toFixed(2);
     const now = Date.now();
     const tx = {
-      category: category === "∅" ? "" : category,
+      category: category === "∅" ? undefined : category,
       currencyCode: currency || "EUR",
       dateTime: now,
       items: [
