@@ -51,6 +51,8 @@ function RouterApp() {
     settleUpMembers: [],
     settleUpCurrency: "",
     swileMilliunits: DEFAULT_SWILE_MILLIUNITS,
+    showAccounts: false,
+    showDetails: false,
   };
   const [formState, setFormState] = useState(DEFAULT_FORM_STATE);
   useEffect(() => {
