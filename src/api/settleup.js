@@ -47,15 +47,21 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+/**
+ * Make a call to the SettleUp Firebase REST API
+ * @param {string} endpoint - API endpoint to call (e.g. /userGroups/{userId}.json)
+ * @param {string} token - Firebase auth token
+ * @param {object} options - Additional axios options (method, headers, data)
+ * @returns {Promise<object>} - API response data
+ */
 async function callApi(endpoint, token, options = {}) {
   if (SETTLEUP_DUMMY_MODE) {
     const method = options.method || "GET";
     return dummyResponse(endpoint, method, options.body);
   }
   if (!token) throw new Error("No auth token");
-  const url = `${endpoint}?auth=${token}`;
   try {
-    const res = await api({ url, ...options });
+    const res = await api({ url: endpoint, params: { auth: token }, ...options });
     return res.data;
   } catch (err) {
     throw new Error(err.response?.data?.error || err.message);
