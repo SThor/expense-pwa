@@ -33,10 +33,7 @@
   border: none !important;
   width: 100% !important;
   max-width: 100% !important;
-}
-
-/* Remove flex centering from card/content, keep only vertical stacking */
-.firebaseui-container, .firebaseui-card, .firebaseui-card-content {
+  /* Remove flex centering from card/content, keep only vertical stacking */
   display: block !important;
   align-items: unset !important;
   justify-content: unset !important;

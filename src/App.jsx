@@ -185,39 +185,53 @@ export default function App({ onSubmit, formState, setFormState }) {
         console.error("[SettleUp] Error fetching groups:", err);
         setSettleUpResult("Error fetching groups: " + err.message);
       });
-  }, [settleUpUser?.uid]);
-
-  // Find test group or fallback to first group
+  }, [settleUpUser?.uid]);  // Find test group or fallback to first group
   useEffect(() => {
     if (!formState.settleUpGroups || !settleUpToken || !settleUpUser.uid) return;
     const groupIds = Object.keys(formState.settleUpGroups);
+    const targetGroupName = import.meta.env.VITE_SETTLEUP_GROUP_NAME;
+    
     (async () => {
       let found = null;
-      for (const groupId of groupIds) {
-        try {
-          const data = await fetchSettleUpGroup(settleUpToken, groupId);
-          if (
-            data &&
-            data.name &&
-            data.name.trim().toLowerCase() === import.meta.env.VITE_SETTLEUP_GROUP_NAME.toLowerCase()
-          ) {
-            found = { groupId, ...data };
-            break;
+      let shouldSearchForSpecificGroup = targetGroupName && targetGroupName.trim() !== '';
+      
+      if (!shouldSearchForSpecificGroup) {
+        console.warn('[SettleUp] VITE_SETTLEUP_GROUP_NAME is not defined or empty, skipping group search and using first group');
+        setSettleUpResult("No target group name configured. Using your first group.");
+      } else {
+        // Search for the specific group
+        for (const groupId of groupIds) {
+          try {
+            const data = await fetchSettleUpGroup(settleUpToken, groupId);
+            if (
+              data &&
+              data.name &&
+              data.name.trim().toLowerCase() === targetGroupName.toLowerCase()
+            ) {
+              found = { groupId, ...data };
+              break;
+            }
+          } catch (err) {
+            setSettleUpResult("Error fetching group: " + err.message);
           }
-        } catch (err) {
-          setSettleUpResult("Error fetching group: " + err.message);
+        }
+        
+        if (found) {
+          setSettleUpResult(""); // Clear any previous messages on success
+        } else {
+          setSettleUpResult(
+            "No group named '" + targetGroupName + "' found. Using your first group instead.",
+          );
         }
       }
+      
+      // If no specific group found (or we skipped the search), use first group
       if (!found && groupIds.length > 0) {
         const groupId = groupIds[0];
         const data = await fetchSettleUpGroup(settleUpToken, groupId);
         found = { groupId, ...data };
-        setSettleUpResult(
-          "No group named '" + import.meta.env.VITE_SETTLEUP_GROUP_NAME + "' found. Using your first group instead.",
-        );
-      } else {
-        setSettleUpResult(found ? "" : "No group named '" + import.meta.env.VITE_SETTLEUP_GROUP_NAME + "' found.");
       }
+      
       setFormState((prev) => ({
         ...prev,
         settleUpGroup: found,
