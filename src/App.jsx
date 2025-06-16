@@ -40,8 +40,6 @@ export default function App({ onSubmit, formState, setFormState }) {
   const [settleUpResult, setSettleUpResult] = useState("");
 
   // Section reveal state
-  const [showAccounts, setShowAccounts] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
   const [showSwile, setShowSwile] = useState(false);
 
   // Section refs for CSSTransition to avoid findDOMNode warning
@@ -303,14 +301,15 @@ export default function App({ onSubmit, formState, setFormState }) {
   }, [formState.account.swile, formState.account.bourso]);
 
   // Reveal logic
+  // accounts and details sections must stay visible once they've been shown
+  // swile section is only shown if it makes sense
   useEffect(() => {
-    setShowAccounts(formState.target.ynab && formState.amountMilliunits !== 0);
-    setShowDetails(
-      formState.amountMilliunits !== 0 &&
-        (!formState.target.ynab ||
-          formState.account.bourso ||
-          formState.account.swile),
-    );
+    if (formState.target.ynab && formState.amountMilliunits !== 0) {
+      setFormState((prev) => ({ ...prev, showAccounts: true }));
+    }
+    if (formState.amountMilliunits !== 0 && (formState.target.settleup || formState.account.bourso || formState.account.swile)) {
+      setFormState((prev) => ({ ...prev, showDetails: true }));
+    }
     setShowSwile(
       formState.target.ynab &&
         formState.amountMilliunits !== 0 &&
@@ -365,7 +364,7 @@ export default function App({ onSubmit, formState, setFormState }) {
           />
         </CSSTransition>
 
-        {showAccounts && (
+        {formState.showAccounts && (
           <CSSTransition
             key="accounts"
             timeout={300}
@@ -406,7 +405,7 @@ export default function App({ onSubmit, formState, setFormState }) {
           </CSSTransition>
         )}
 
-        {showDetails && (
+        {formState.showDetails && (
           <CSSTransition
             key="details"
             timeout={300}
