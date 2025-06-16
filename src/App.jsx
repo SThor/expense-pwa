@@ -1,6 +1,5 @@
 import PropTypes from "prop-types";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { CSSTransition, TransitionGroup } from "react-transition-group";
 
 import {
   fetchSettleUpUserGroups,
@@ -13,6 +12,7 @@ import { useAuth } from "./AuthProvider.jsx";
 import AccountToggles from "./components/AccountToggles.jsx";
 import AmountSection from "./components/AmountSection.jsx";
 import AppToggles from "./components/AppToggles.jsx";
+import Collapsible from "./components/Collapsible.jsx";
 import DetailsSection from "./components/DetailsSection.jsx";
 import SwileAmountSection from "./components/SwileAmountSection.jsx";
 import {
@@ -348,91 +348,60 @@ export default function App({ onSubmit, formState, setFormState }) {
           }))
         }
       />
-      <TransitionGroup component={null}>
-        <CSSTransition
-          key="amount"
-          timeout={300}
-          classNames="fade-slide"
-          nodeRef={amountRef}
-        >
-          <AmountSection
-            ref={amountRef}
-            amountMilliunits={formState.amountMilliunits || 0}
-            setAmountMilliunits={(val) =>
-              setFormState((prev) => ({ ...prev, amountMilliunits: val }))
+      <AmountSection
+        ref={amountRef}
+        amountMilliunits={formState.amountMilliunits || 0}
+        setAmountMilliunits={(val) =>
+          setFormState((prev) => ({ ...prev, amountMilliunits: val }))
+        }
+      />
+
+      <Collapsible isOpened={formState.showAccounts}>
+        <AccountToggles
+          ref={accountsRef}
+          account={formState.account}
+          setAccount={(updater) =>
+            setFormState((prev) => ({
+                ...prev,
+                account:
+                  typeof updater === "function"
+                    ? updater(prev.account)
+                    : updater,
+              }))
             }
-          />
-        </CSSTransition>
+        />
+      </Collapsible>
 
-        {formState.showAccounts && (
-          <CSSTransition
-            key="accounts"
-            timeout={300}
-            classNames="fade-slide"
-            nodeRef={accountsRef}
-          >
-            <AccountToggles
-              ref={accountsRef}
-              account={formState.account}
-              setAccount={(updater) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  account:
-                    typeof updater === "function"
-                      ? updater(prev.account)
-                      : updater,
-                }))
-              }
-            />
-          </CSSTransition>
-        )}
+      <Collapsible isOpened={showSwile}>
+        <SwileAmountSection
+          ref={swileRef}
+          swileMilliunits={formState.swileMilliunits}
+          setSwileMilliunits={(val) =>
+            setFormState((prev) => ({ ...prev, swileMilliunits: val }))
+          }
+          max={formState.amountMilliunits}
+        />
+      </Collapsible>
 
-        {showSwile && (
-          <CSSTransition
-            key="swile"
-            timeout={300}
-            classNames="fade-slide"
-            nodeRef={swileRef}
-          >
-            <SwileAmountSection
-              ref={swileRef}
-              swileMilliunits={formState.swileMilliunits}
-              setSwileMilliunits={(val) =>
-                setFormState((prev) => ({ ...prev, swileMilliunits: val }))
-              }
-              max={formState.amountMilliunits}
-            />
-          </CSSTransition>
-        )}
-
-        {formState.showDetails && (
-          <CSSTransition
-            key="details"
-            timeout={300}
-            classNames="fade-slide"
-            nodeRef={detailsRef}
-          >
-            <DetailsSection
-              ref={detailsRef}
-              formState={formState}
-              setFormState={setFormState}
-              groupedPayees={groupedPayees}
-              groupedCategories={groupedCategories}
-              categories={categories}
-              categoryGroups={categoryGroups}
-              suggestedCategoryIds={suggestedCategoryIds}
-            />
-          </CSSTransition>
-        )}
-      </TransitionGroup>
-      {settleUpResult && (
-        <div
-          className="text-sm mt-2"
-          style={{ color: settleUpResult.startsWith("✅") ? "green" : "red" }}
-        >
-          {settleUpResult}
-        </div>
-      )}
+      <Collapsible isOpened={formState.showDetails}>
+        <DetailsSection
+          ref={detailsRef}
+          formState={formState}
+          setFormState={setFormState}
+          groupedPayees={groupedPayees}
+          groupedCategories={groupedCategories}
+          categories={categories}
+          categoryGroups={categoryGroups}
+          suggestedCategoryIds={suggestedCategoryIds}
+        />
+      </Collapsible>
+      
+      <div
+        className="text-sm mt-2"
+        style={{ color: settleUpResult.startsWith("✅") ? "green" : "red" }}
+      >
+        {settleUpResult}
+      </div>
       <button
         className={`bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full ${
           (!formState.target?.ynab && !formState.target?.settleup) ||
