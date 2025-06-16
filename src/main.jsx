@@ -10,7 +10,8 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import { AppProvider, useAppContext } from "./AppContext.jsx";
+import { AppProvider } from "./AppContext.jsx";
+import { AuthProvider, useAuth } from "./AuthProvider.jsx";
 import {
   DEFAULT_SETTLEUP_CATEGORY,
   DEFAULT_SWILE_MILLIUNITS,
@@ -22,15 +23,15 @@ import NotFoundPage from "./NotFoundPage.jsx";
 import "./index.css";
 
 function RequireAuth({ children }) {
-  const { isLoggedIn } = useAppContext();
-  if (!isLoggedIn) {
+  const { user } = useAuth();
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
   return children;
 }
 
 function RouterApp() {
-  const { isLoggedIn, login } = useAppContext();
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   // Default form state for all shared fields
@@ -45,24 +46,24 @@ function RouterApp() {
     categoryId: "",
     settleUpCategory: DEFAULT_SETTLEUP_CATEGORY,
     settleUpGroups: null,
-    settleUpTestGroup: null,
+    settleUpGroup: null,
     settleUpPayerId: "",
-    settleUpForWhomIds: [],
+    settleUpMembers: [],
     settleUpCurrency: "",
     swileMilliunits: DEFAULT_SWILE_MILLIUNITS,
   };
   const [formState, setFormState] = useState(DEFAULT_FORM_STATE);
   useEffect(() => {
     // If logged in and on /login, redirect to /
-    if (isLoggedIn && location.pathname === "/login") {
+    if (user && location.pathname === "/login") {
       console.log("[RouterApp] Auto-redirecting to / after login");
       navigate("/", { replace: true });
     }
-  }, [isLoggedIn, location.pathname]);
+  }, [user, location.pathname]);
 
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage onLogin={login} />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/dev" element={<DevApp />} />
       <Route
         path="/"
@@ -91,11 +92,13 @@ function RouterApp() {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <AppProvider>
-      <BrowserRouter>
-        <RouterApp />
-      </BrowserRouter>
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <BrowserRouter>
+          <RouterApp />
+        </BrowserRouter>
+      </AppProvider>
+    </AuthProvider>
   </StrictMode>,
 );
 

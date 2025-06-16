@@ -25,3 +25,100 @@
     opacity 200ms,
     transform 200ms;
 }
+
+/* Custom FirebaseUI overrides for seamless integration */
+.firebaseui-container, .firebaseui-card, .firebaseui-card-content {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  /* Remove flex centering from card/content, keep only vertical stacking */
+  display: block !important;
+  align-items: unset !important;
+  justify-content: unset !important;
+}
+
+.firebaseui-form-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: right !important;
+  gap: 1rem;
+  width: 100%;
+}
+
+.firebaseui-card-header {
+  padding: 0 !important;
+}
+
+.firebaseui-idp-list > li {
+  width: 100%;
+}
+
+.firebaseui-idp-button, .firebaseui-idp-button .mdl-button {
+  width: 100% !important;
+}
+
+/* Only override non-Google IDP buttons for color */
+.firebaseui-idp-button:not(.firebaseui-idp-google), .firebaseui-idp-button:not(.firebaseui-idp-google) .mdl-button {
+  background-color: #0ea5e9 !important; /* Tailwind bg-sky-500 */
+  color: #fff !important;
+  border-radius: 0.25rem !important; /* Tailwind rounded */
+  font-weight: 600 !important;
+}
+
+.firebaseui-idp-button:not(.firebaseui-idp-google):hover, .firebaseui-idp-button:not(.firebaseui-idp-google) .mdl-button:hover {
+  background-color: #0369a1 !important; /* Tailwind hover:bg-sky-600 */
+}
+
+/* Keep Google button default for accessibility/recognition */
+.firebaseui-idp-google, .firebaseui-idp-google .mdl-button {
+  border-radius: 0.25rem !important; /* Match app's button radius */
+}
+
+/* Email sign-in buttons: match app, clarify hierarchy */
+.firebaseui-button, .firebaseui-button.mdl-button {
+  background-color: #0ea5e9 !important;
+  color: #fff !important;
+  border-radius: 0.25rem !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.firebaseui-button:hover, .firebaseui-button.mdl-button:hover {
+  background-color: #0369a1 !important;
+}
+
+.firebaseui-id-secondary-link.firebaseui-button, .firebaseui-id-secondary.firebaseui-button.mdl-button {
+  background: none !important;
+  color: #0369a1 !important;
+  border: none !important;
+  font-weight: 500 !important;
+}
+
+.firebaseui-id-secondary-link.firebaseui-button:hover, .firebaseui-id-secondary.firebaseui-button.mdl-button:hover {  
+  color: #fff !important;
+}
+
+.firebaseui-title, .firebaseui-subtitle, .firebaseui-text {
+  color: #0369a1 !important; /* Tailwind text-sky-700 */
+}
+
+/* Remove extra padding for a more compact look */
+.firebaseui-card-content {
+  padding: 0 !important;
+}
+
+.firebaseui-card-actions {
+  padding: 0 !important;
+}
+
+/* Input underline color for email sign-in */
+.firebaseui-input, .firebaseui-textfield.mdl-textfield .mdl-textfield__input {
+  border-bottom: 2px solid #0ea5e9 !important; /* Tailwind sky-500 */
+  box-shadow: none !important;
+}
+
+.firebaseui-input.is-focused {
+  border-bottom: 2px solid #0369a1 !important; /* Tailwind sky-600 on focus */
+}

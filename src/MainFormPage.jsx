@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import { useState } from "react";
 
 import App from "./App.jsx";
-import { useAppContext } from "./AppContext.jsx";
+import { useAuth } from "./AuthProvider.jsx";
 import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
 import { formStatePropType } from "./propTypes";
 import ReviewPage from "./ReviewPage.jsx";
@@ -12,7 +12,7 @@ export default function MainFormPage({
   setFormState,
   resetFormState,
 }) {
-  const { logout } = useAppContext();
+  const { logout } = useAuth();
   const [showReview, setShowReview] = useState(false);
   return showReview ? (
     <ReviewPage

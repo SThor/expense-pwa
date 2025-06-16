@@ -159,21 +159,18 @@ export default function SettleUpApiTestForm({ setResult }) {
     const amount = (-amountMilliunits / 1000).toFixed(2);
     const now = Date.now();
     const tx = {
-      category: category === "∅" ? "" : category,
+      category: category === "∅" ? undefined : category,
       currencyCode: currency || "EUR",
       dateTime: now,
       items: [
         {
-          amount: amount, // already string
+          amount: amount,
           forWhom: forWhomIds.map((id) => ({ memberId: id, weight: "1" })),
         },
       ],
       purpose: desc,
       type: "expense",
       whoPaid: [{ memberId: payerId, weight: "1" }],
-      fixedExchangeRate: false, // add optional field as in docs
-      exchangeRates: undefined, // not needed if currency matches group
-      receiptUrl: undefined, // not needed
     };
     console.log("[SettleUp] transaction payload:", tx);
     try {
