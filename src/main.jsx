@@ -16,7 +16,6 @@ import {
   DEFAULT_SETTLEUP_CATEGORY,
   DEFAULT_SWILE_MILLIUNITS,
 } from "./constants";
-import DevApp from "./DevApp.jsx";
 import LoginPage from "./LoginPage.jsx";
 import MainFormPage from "./MainFormPage.jsx";
 import NotFoundPage from "./NotFoundPage.jsx";
@@ -66,7 +65,6 @@ function RouterApp() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/dev" element={<DevApp />} />
       <Route
         path="/"
         element={
