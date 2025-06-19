@@ -121,8 +121,8 @@ function GroupedAutocomplete({
       if (matchingItem) {
         // Exact match found
         onChange(input, matchingItem.value);
-      } else if (onCreate) {
-        // No match but onCreate exists - create new item
+      } else {
+        // No match - create new item
         onCreate(input);
       }
     }, 120);
@@ -260,9 +260,6 @@ function GroupedAutocomplete({
                   onMouseEnter={() => setHighlighted({ groupIdx, itemIdx })}
                 >
                   {item.label}
-                  {item.extra && (
-                    <span className="float-right text-xs">{item.extra}</span>
-                  )}
                 </div>
               ))}
             </div>
