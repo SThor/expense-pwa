@@ -1,6 +1,5 @@
 import PropTypes from "prop-types";
 import { createContext, useContext, useMemo, useState } from "react";
-import * as ynab from "ynab";
 
 const AppContext = createContext();
 
@@ -12,8 +11,8 @@ export function AppProvider({ children }) {
   const [budgetId, setBudgetId] = useState(defaultBudgetId);
   const [accounts, setAccounts] = useState([]);
   const ynabAPI = useMemo(
-    () => (ynabToken ? new ynab.API(ynabToken) : null),
-    [ynabToken],
+    () => (ynabToken ? new window.ynab.API(ynabToken) : null),
+    [ynabToken]
   );
   const setBudgetIdPersist = (id) => {
     setBudgetId(id);
@@ -31,12 +30,7 @@ export function AppProvider({ children }) {
       accounts,
       setAccounts,
     }),
-    [
-      ynabToken,
-      ynabAPI,
-      budgetId,
-      accounts,
-    ],
+    [ynabToken, ynabAPI, budgetId, accounts]
   );
 
   return (
