@@ -1,8 +1,11 @@
 import PropTypes from "prop-types";
 import { forwardRef } from "react";
 
+import { fetchSettleUpTransactions } from "../api/settleup.js";
+import { useAuth } from "../AuthProvider.jsx";
 import { DEFAULT_SETTLEUP_CATEGORY } from "../constants";
 import { formStatePropType } from "../propTypes";
+import { getMostCommonCategoryFromTransactions } from "../utils/settleupUtils";
 
 import EmojiCategoryButton from "./EmojiCategoryButton.jsx";
 import GroupedAutocomplete from "./GroupedAutocomplete.jsx";
@@ -18,6 +21,51 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
     categoryGroups,
     suggestedCategoryIds,
   } = props;
+
+  const { token: settleUpToken } = useAuth();
+
+  // Fonction commune pour extraire l'emoji et mettre à jour la catégorie
+  const updateCategoryWithEmoji = (categoryName, categoryId) => {
+    let newSettleUpCategory = formState.settleUpCategory;
+
+    // Toujours extraire l'emoji si la catégorie en a un
+    if (categoryName) {
+      const emojiMatch = categoryName.match(/^\p{Emoji}/u);
+      if (emojiMatch) {
+        newSettleUpCategory = emojiMatch[0];
+      }
+    }
+
+    setFormState({
+      ...formState,
+      category: categoryName,
+      categoryId: categoryId,
+      settleUpCategory: newSettleUpCategory,
+    });
+  };
+  // Fonction pour l'autocomplétion SettleUp
+  const triggerSettleUpAutocomplete = async (payeeName) => {
+    if (!payeeName || !formState.settleUpGroup?.groupId || !settleUpToken)
+      return;
+
+    try {
+      const data = await fetchSettleUpTransactions(
+        settleUpToken,
+        formState.settleUpGroup.groupId
+      );
+      if (!data) return;
+      const transactions = Object.values(data);
+      const mostCommon = getMostCommonCategoryFromTransactions(
+        transactions,
+        payeeName
+      );
+      if (mostCommon) {
+        setFormState((prev) => ({ ...prev, settleUpCategory: mostCommon }));
+      }
+    } catch {
+      // ignore autofill errors
+    }
+  };
 
   return (
     <div ref={ref}>
@@ -38,16 +86,19 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
           <GroupedAutocomplete
             id="payee-autocomplete"
             value={formState.payee}
-            onChange={(val, item) => {
+            onChange={(label, value) => {
               setFormState({
                 ...formState,
-                payee: val,
-                payeeId: item && item.value ? item.value : "",
+                payee: label,
+                payeeId: value,
                 // Reset settleUpCategory if payee is cleared
-                settleUpCategory: val
+                settleUpCategory: label
                   ? formState.settleUpCategory
                   : DEFAULT_SETTLEUP_CATEGORY,
               });
+              if (label) {
+                triggerSettleUpAutocomplete(label);
+              }
             }}
             groupedItems={groupedPayees}
             placeholder="Payee"
@@ -68,7 +119,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
                 const cat = categories.find((c) => c.id === catId);
                 if (!cat) return null;
                 const group = categoryGroups.find((g) =>
-                  g.categories.some((c) => c.id === catId),
+                  g.categories.some((c) => c.id === catId)
                 );
                 return (
                   <SuggestedCategoryPill
@@ -77,11 +128,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
                     group={group}
                     selected={formState.categoryId === catId}
                     onClick={() => {
-                      setFormState({
-                        ...formState,
-                        category: cat.name,
-                        categoryId: catId,
-                      });
+                      updateCategoryWithEmoji(cat.name, catId);
                     }}
                   />
                 );
@@ -100,25 +147,8 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
         <GroupedAutocomplete
           id="category-autocomplete"
           value={formState.category}
-          onChange={(val, item) => {
-            let newSettleUpCategory = formState.settleUpCategory;
-            if (
-              newSettleUpCategory === DEFAULT_SETTLEUP_CATEGORY &&
-              item &&
-              item.label
-            ) {
-              // Regex to match emoji at the start
-              const emojiMatch = item.label.match(/^\p{Emoji}/u);
-              if (emojiMatch) {
-                newSettleUpCategory = emojiMatch[0];
-              }
-            }
-            setFormState({
-              ...formState,
-              category: val,
-              categoryId: item && item.value ? item.value : "",
-              settleUpCategory: newSettleUpCategory,
-            });
+          onChange={(label, value) => {
+            updateCategoryWithEmoji(label, value);
           }}
           groupedItems={groupedCategories}
           placeholder="Category"
@@ -156,9 +186,9 @@ DetailsSection.propTypes = {
         PropTypes.shape({
           label: PropTypes.string.isRequired,
           value: PropTypes.any.isRequired,
-        }),
+        })
       ).isRequired,
-    }),
+    })
   ).isRequired,
   groupedCategories: PropTypes.arrayOf(
     PropTypes.shape({
@@ -167,25 +197,25 @@ DetailsSection.propTypes = {
         PropTypes.shape({
           label: PropTypes.string.isRequired,
           value: PropTypes.any.isRequired,
-        }),
+        })
       ).isRequired,
-    }),
+    })
   ).isRequired,
   categories: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.any.isRequired,
       name: PropTypes.string.isRequired,
-    }),
+    })
   ).isRequired,
   categoryGroups: PropTypes.arrayOf(
     PropTypes.shape({
       categories: PropTypes.arrayOf(
         PropTypes.shape({
           id: PropTypes.any.isRequired,
-        }),
+        })
       ).isRequired,
       name: PropTypes.string,
-    }),
+    })
   ).isRequired,
   suggestedCategoryIds: PropTypes.arrayOf(PropTypes.any).isRequired,
 };

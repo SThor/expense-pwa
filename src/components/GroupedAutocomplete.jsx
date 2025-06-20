@@ -62,7 +62,7 @@ function GroupedAutocomplete({
 
   const handleSelect = (item) => {
     setInput(item.label);
-    onChange && onChange(item.label, item);
+    onChange(item.label, item.value);
     setOpen(false);
     userInputRef.current = false;
   };
@@ -106,9 +106,26 @@ function GroupedAutocomplete({
       setOpen(false);
     }
   }
-
   function handleBlur() {
-    setTimeout(() => setOpen(false), 120);
+    setTimeout(() => {
+      setOpen(false);
+      
+      if (!input) {
+        // Empty input - treat as clear
+        onChange("", "");
+        return;
+      }
+      
+      // Find the value that corresponds to the input label
+      const matchingItem = flatList.find(item => item.label === input);
+      if (matchingItem) {
+        // Exact match found
+        onChange(input, matchingItem.value);
+      } else {
+        // No match - create new item
+        onCreate(input);
+      }
+    }, 120);
   }
 
   // Only track user focus for suppressOpen logic
@@ -130,10 +147,8 @@ function GroupedAutocomplete({
       }
     };
   }, []);
-
   const handleInputChange = (e) => {
     setInput(e.target.value);
-    onChange && onChange(e.target.value, null);
     setOpen(true);
     userInputRef.current = true;
   };
@@ -184,7 +199,7 @@ function GroupedAutocomplete({
             tabIndex={-1}
             onClick={() => {
               setInput("");
-              onChange && onChange("", null);
+              onChange("", "");
               setOpen(true);
               justClearedRef.current = true;
               setTimeout(() => {
@@ -207,8 +222,7 @@ function GroupedAutocomplete({
             transition: "box-shadow 0.2s",
           }}
         >
-          {onCreate &&
-            input &&
+          {input &&
             !flatList.some((item) => item.label === input) && (
               <div
                 className="cursor-pointer px-3 py-2 hover:bg-blue-50 text-blue-700 flex items-center"
@@ -246,9 +260,6 @@ function GroupedAutocomplete({
                   onMouseEnter={() => setHighlighted({ groupIdx, itemIdx })}
                 >
                   {item.label}
-                  {item.extra && (
-                    <span className="float-right text-xs">{item.extra}</span>
-                  )}
                 </div>
               ))}
             </div>
@@ -270,7 +281,7 @@ function GroupedAutocomplete({
 
 GroupedAutocomplete.propTypes = {
   value: PropTypes.string,
-  onChange: PropTypes.func,
+  onChange: PropTypes.func.isRequired, // (label: string, value: any) => void
   groupedItems: PropTypes.arrayOf(
     PropTypes.shape({
       label: PropTypes.string.isRequired,
@@ -284,7 +295,7 @@ GroupedAutocomplete.propTypes = {
     }),
   ).isRequired,
   placeholder: PropTypes.string,
-  onCreate: PropTypes.func,
+  onCreate: PropTypes.func.isRequired, // (input: string) => void
 };
 
 export default GroupedAutocomplete;

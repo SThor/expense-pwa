@@ -5,7 +5,6 @@ import {
   fetchSettleUpUserGroups,
   fetchSettleUpGroup,
   fetchSettleUpMembers,
-  fetchSettleUpTransactions,
 } from "./api/settleup.js";
 import { useAppContext } from "./AppContext.jsx";
 import { useAuth } from "./AuthProvider.jsx";
@@ -17,12 +16,10 @@ import DetailsSection from "./components/DetailsSection.jsx";
 import SwileAmountSection from "./components/SwileAmountSection.jsx";
 import {
   DEFAULT_SWILE_MILLIUNITS,
-  DEBOUNCE_AUTOFILL,
   DEFAULT_CURRENCY,
 } from "./constants";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { formStatePropType } from "./propTypes.js";
-import { getMostCommonCategoryFromTransactions } from "./utils/settleupUtils";
 import { getClosestLocation } from "./utils/ynabUtils.js";
 import "./index.css";
 
@@ -262,37 +259,6 @@ export default function App({ onSubmit, formState, setFormState }) {
         formState.settleUpGroup?.convertedToCurrency || DEFAULT_CURRENCY,
     }));
   }, [formState.settleUpGroup, settleUpToken]);
-
-  // Autofill SettleUp category (emoji) based on previous transactions with same payee/description
-  useEffect(() => {
-    if (!formState.payee || !formState.settleUpGroup?.groupId || !settleUpToken)
-      return;
-    // Debounce: only fetch after user stops typing for DEBOUNCE_AUTOFILL ms
-    const handler = setTimeout(async () => {
-      try {
-        const data = await fetchSettleUpTransactions(
-          settleUpToken,
-          formState.settleUpGroup.groupId,
-        );
-        if (!data) return;
-        const transactions = Object.values(data);
-        // Use shared utility with 'contains' match
-        const mostCommon = getMostCommonCategoryFromTransactions(
-          transactions,
-          formState.payee,
-          "purpose",
-          "contains",
-        );
-        if (mostCommon) {
-          setFormState({ ...formState, settleUpCategory: mostCommon });
-        }
-      } catch {
-        // ignore autofill errors
-      }
-    }, DEBOUNCE_AUTOFILL);
-    return () => clearTimeout(handler);
-  }, [formState.payee, formState.settleUpGroup?.groupId, settleUpToken]);
-
   // Reset swileMilliunits to default when toggles change
   useEffect(() => {
     if (formState.account.swile && formState.account.bourso) {
