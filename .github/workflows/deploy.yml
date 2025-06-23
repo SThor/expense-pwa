@@ -1,0 +1,147 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main, integration, "feature/**"] # Triggers on main, integration, and all feature branches
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set environment variables
+        run: |
+          # Set VITE variables for build from secrets
+          echo "VITE_YNAB_TOKEN=${{ secrets.VITE_YNAB_TOKEN }}" >> $GITHUB_ENV
+          echo "VITE_SETTLEUP_DUMMY=${{ secrets.VITE_SETTLEUP_DUMMY }}" >> $GITHUB_ENV
+          echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" >> $GITHUB_ENV
+          echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}" >> $GITHUB_ENV
+          echo "VITE_FIREBASE_DATABASE_URL=${{ secrets.VITE_FIREBASE_DATABASE_URL }}" >> $GITHUB_ENV
+          echo "VITE_SETTLEUP_GROUP_NAME=${{ secrets.VITE_SETTLEUP_GROUP_NAME }}" >> $GITHUB_ENV
+
+      - name: Set deployment target
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "DEPLOY_PATH=/var/www/expense-pwa" >> $GITHUB_ENV
+            echo "BACKUP_PATH=/var/www/expense-pwa-backup" >> $GITHUB_ENV
+          else
+            echo "DEPLOY_PATH=/var/www/expense-pwa-staging" >> $GITHUB_ENV
+            echo "BACKUP_PATH=/var/www/expense-pwa-staging-backup" >> $GITHUB_ENV
+          fi
+
+      - name: Build application
+        run: npm run build
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            # Set deployment paths based on branch
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              DEPLOY_PATH="/var/www/expense-pwa"
+              BACKUP_PATH="/var/www/expense-pwa-backup"
+            else
+              DEPLOY_PATH="/var/www/expense-pwa-staging"
+              BACKUP_PATH="/var/www/expense-pwa-staging-backup"
+            fi
+            echo "🚀 Deploying to: $DEPLOY_PATH"
+
+            # Create deployment directory if it doesn't exist
+            sudo mkdir -p $DEPLOY_PATH
+            sudo chown -R www-data:www-data $DEPLOY_PATH
+            sudo chmod -R 755 $DEPLOY_PATH
+
+            echo "📋 Current contents:"
+            ls -la $DEPLOY_PATH/ || echo "Directory doesn't exist yet"
+
+            # Create backup of current deployment
+            sudo mkdir -p $BACKUP_PATH
+            sudo cp -r $DEPLOY_PATH/* $BACKUP_PATH/ 2>/dev/null || true
+
+            # Clear current deployment directory
+            sudo rm -rf $DEPLOY_PATH/*
+            echo "✅ Cleared deployment directory"
+      - name: Copy files to VPS
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "dist/*"
+          target: "/tmp/expense-pwa-deploy"
+          strip_components: 1
+
+      - name: Move files and set permissions
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            # Set deployment paths based on branch
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              DEPLOY_PATH="/var/www/expense-pwa"
+              BACKUP_PATH="/var/www/expense-pwa-backup"
+            else
+              DEPLOY_PATH="/var/www/expense-pwa-staging"
+              BACKUP_PATH="/var/www/expense-pwa-staging-backup"
+            fi
+            echo "📁 Checking temp directory:"
+            ls -la /tmp/expense-pwa-deploy/ || echo "Temp directory not found!"
+
+            # Ensure deployment directory exists with proper permissions
+            sudo mkdir -p $DEPLOY_PATH
+            sudo chown -R www-data:www-data $DEPLOY_PATH
+            sudo chmod -R 755 $DEPLOY_PATH
+
+            # Move files from temp location to web directory
+            if [ -d "/tmp/expense-pwa-deploy" ] && [ "$(ls -A /tmp/expense-pwa-deploy)" ]; then
+              sudo mv /tmp/expense-pwa-deploy/* $DEPLOY_PATH/
+              echo "✅ Files moved to $DEPLOY_PATH"
+            else
+              echo "❌ No files found in temp directory!"
+              exit 1
+            fi
+
+            # Set proper permissions
+            sudo chown -R www-data:www-data $DEPLOY_PATH
+            sudo chmod -R 755 $DEPLOY_PATH
+
+            echo "📋 Final deployment contents:"
+            ls -la $DEPLOY_PATH/
+
+            # Test nginx configuration
+            sudo nginx -t
+
+            # Reload nginx if config is valid
+            if [ $? -eq 0 ]; then
+              sudo systemctl reload nginx
+              echo "✅ Deployment successful!"
+            else
+              echo "❌ Nginx config error - rolling back"
+              sudo rm -rf $DEPLOY_PATH/*
+              sudo cp -r $BACKUP_PATH/* $DEPLOY_PATH/
+              exit 1
+            fi
+
+            # Clean up
+            rm -rf /tmp/expense-pwa-deploy
+            sudo rm -rf $BACKUP_PATH
