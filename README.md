@@ -6,7 +6,7 @@ A Progressive Web App for quickly adding expenses to both [YNAB (You Need A Budg
 
 ## Features
 
-- 📱 **Progressive Web App** - Works offline and can be installed on any device 🔜 (soon)
+- 📱 **Progressive Web App** - Works offline and can be installed on any device
 - 💰 **YNAB Integration** - Automatically create transactions in your YNAB budget
 - 👥 **SettleUp Integration** - Add shared expenses to your SettleUp groups
 - 🎯 **Smart Categories** - Suggests categories based on your transaction history
@@ -20,7 +20,7 @@ A Progressive Web App for quickly adding expenses to both [YNAB (You Need A Budg
 - **Frontend**: React 18 with Vite
 - **Styling**: Tailwind CSS
 - **Animations**: Framer Motion
-- **PWA**: Vite PWA Plugin 🔜 (soon)
+- **PWA**: Vite PWA Plugin
 - **APIs**: YNAB API, SettleUp Firebase API
 - **Authentication**: Firebase Auth with FirebaseUI
 - **Icons**: React Icons, Emoji Mart
