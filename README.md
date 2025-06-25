@@ -117,6 +117,32 @@ Special handling for Swile meal vouchers with automatic amount calculations and 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build locally
+- `npm test` - Run tests
+- `npm run test:coverage` - Run tests with coverage
+
+## Deployment
+
+This app is designed to be deployed as a static site with automatic deployments.
+
+### Production Setup
+
+1. **Environment Configuration**: Copy `.env.sample` to `.env` and configure your production values
+2. **GitHub Actions**: Automatic deployment is configured via GitHub Actions
+3. **HTTPS**: Production deployment includes automatic SSL certificate management
+4. **PWA Features**: Service worker and offline capabilities are enabled in production builds
+
+### Manual Deployment
+
+If you prefer manual deployment:
+
+```bash
+# Build the app
+npm run build
+
+# Deploy the dist/ folder to your web server
+```
+
+The app is optimized for static hosting and works great with services like Nginx, Apache, or any CDN.
 
 ### Project Structure
 
