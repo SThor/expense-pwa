@@ -28,7 +28,7 @@ export default function Version({ variant = "short", className = "" }) {
       `Built: ${buildDate}`,
     ]
       .filter(Boolean)
-      .join("\n");
+      .join("&#10;");
   };
 
   return (

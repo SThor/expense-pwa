@@ -111,4 +111,15 @@ describe("Version", () => {
     // Should also show asterisk for dirty state
     expect(versionElement.textContent).toMatch(/\*$/);
   });
+
+  it("uses HTML entity for line breaks in tooltip for cross-browser compatibility", () => {
+    render(<Version variant="short" />);
+    
+    const versionElement = screen.getByText(/^v/);
+    const title = versionElement.getAttribute("title");
+    
+    // Should use HTML entity &#10; instead of \n for better cross-browser support
+    expect(title).toContain("&#10;");
+    expect(title).not.toContain("\n");
+  });
 });
