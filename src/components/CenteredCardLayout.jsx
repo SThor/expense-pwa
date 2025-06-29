@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import PropTypes from "prop-types";
 
+import Version from "./Version.jsx";
+
 export default function CenteredCardLayout({ children }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
@@ -13,6 +15,7 @@ export default function CenteredCardLayout({ children }) {
       >
         {children}
       </motion.div>
+      <Version variant="short" />
     </div>
   );
 }

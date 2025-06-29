@@ -51,3 +51,6 @@ coverage/
 
 # Optional: PWA manifest icons (if generated during build)
 *.webmanifest
+
+# Auto-generated version file
+src/version.js
