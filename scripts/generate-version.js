@@ -3,7 +3,8 @@
 /* eslint-disable import/no-nodejs-modules */
 import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 function getGitInfo() {
   try {
@@ -73,7 +74,9 @@ export const getShortVersionString = () => {
 };
 `;
 
-  const outputPath = resolve('src/version.js');
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const outputPath = resolve(__dirname, '../src/version.js');
   writeFileSync(outputPath, versionContent);
   
   console.log(`Generated version file: ${outputPath}`);
