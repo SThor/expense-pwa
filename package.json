@@ -1,9 +1,17 @@
 {
   "name": "expense-pwa",
   "version": "0.0.1",
+  "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "generate-version": "node scripts/generate-version.js",
+    "prebuild": "npm run generate-version",
+    "pretest": "npm run generate-version",
+    "pretest:run": "npm run generate-version",
+    "pretest:ui": "npm run generate-version",
+    "pretest:watch": "npm run generate-version",
+    "pretest:coverage": "npm run generate-version",
+    "dev": "npm run generate-version && vite",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",

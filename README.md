@@ -162,6 +162,10 @@ src/
 └── utils/                # Utility functions
 ```
 
+### Specific documentation
+
+- [Version Display System](doc/VERSION_DISPLAY.md) - Automatic git-based version display on all pages
+
 ## License
 
 This project is private for now. All rights reserved.
