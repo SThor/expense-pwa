@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, test, expect, beforeEach, vi } from "vitest";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 
 import GroupedAutocomplete from "./GroupedAutocomplete.jsx";
 
@@ -10,6 +10,11 @@ describe("GroupedAutocomplete", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(async () => {
+    // Wait for any pending timeouts to complete
+    await new Promise(resolve => setTimeout(resolve, 150));
   });
 
   test("renders with initial value", () => {
