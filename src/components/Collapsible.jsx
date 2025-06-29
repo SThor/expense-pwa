@@ -1,0 +1,26 @@
+import { AnimatePresence, motion } from "framer-motion";
+import PropTypes from "prop-types";
+
+const Collapsible = ({ isOpened, children }) => {
+  return (
+    <AnimatePresence>
+      {isOpened && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          style={{ overflow: "hidden" }}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+Collapsible.propTypes = {
+  isOpened: PropTypes.bool.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+export default Collapsible;
