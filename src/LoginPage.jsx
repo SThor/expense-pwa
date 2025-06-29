@@ -23,15 +23,30 @@ export default function LoginPage() {
 
     // FirebaseUI config
     const uiConfig = {
+      signInFlow: 'redirect', // Force redirect flow
       signInOptions: [
-        firebase.auth.EmailAuthProvider.PROVIDER_ID,
-        firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-      ],
-      callbacks: {
-        signInSuccessWithAuthResult: async () => {
-          // Let AuthProvider handle state, just prevent redirect
-          return false;
+        {
+          provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
+          requireDisplayName: false,
         },
+        {
+          provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+          customParameters: {
+            prompt: 'select_account'
+          }
+        },
+      ],
+      signInSuccessUrl: window.location.origin + '/', // Redirect to home after login
+      callbacks: {
+        signInSuccessWithAuthResult: async (authResult) => {
+          console.log("[LoginPage] Sign in success:", authResult);
+          // Let the redirect handle navigation
+          return true;
+        },
+        signInFailure: (error) => {
+          console.error("[LoginPage] Sign in failure:", error);
+          return Promise.resolve();
+        }
       },
     };
 

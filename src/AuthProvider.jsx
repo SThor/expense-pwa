@@ -7,8 +7,13 @@ import { FIREBASE_TOKEN_REFRESH_INTERVAL } from "./constants";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: "settle-up-live",
+  storageBucket: "settle-up-live.appspot.com",
+  messagingSenderId: "817191222688",
+  appId: "1:817191222688:web:6f1f6d1e01f53454aff8c5",
+  measurementId: "G-V5MLGBC0T9"
 };
 
 if (!firebase.apps.length) {
@@ -23,17 +28,58 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = firebase.auth().onAuthStateChanged(async () => {
-      const firebaseUser = firebase.auth().currentUser;
+    // Set auth persistence to LOCAL (default, but explicit)
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    
+    let isInitialized = false;
+    
+    // Check for redirect result first
+    const checkRedirectResult = async () => {
+      try {
+        const result = await firebase.auth().getRedirectResult();
+        console.log("[AuthProvider] Redirect result:", result);
+        if (result.user) {
+          console.log("[AuthProvider] Redirect result user:", result.user);
+          setUser(result.user);
+          const t = await result.user.getIdToken();
+          setToken(t);
+          setLoading(false);
+          isInitialized = true;
+          return;
+        }
+      } catch (error) {
+        console.error("[AuthProvider] Redirect result error:", error);
+      }
+    };
+
+    checkRedirectResult();
+
+    const unsubscribe = firebase.auth().onAuthStateChanged(async (firebaseUser) => {
       console.log("[AuthProvider] Auth state changed:", firebaseUser);
+      
+      // Don't override user if we already got it from redirect result
+      if (isInitialized && firebaseUser) {
+        return;
+      }
+      
       setUser(firebaseUser);
       if (firebaseUser) {
-        const t = await firebaseUser.getIdToken();
-        setToken(t);
+        try {
+          const t = await firebaseUser.getIdToken();
+          setToken(t);
+        } catch (error) {
+          console.error("[AuthProvider] Token error:", error);
+        }
       } else {
         setToken(null);
       }
-      setLoading(false);
+      
+      // Add a small delay before setting loading to false to ensure auth state is stable
+      if (!isInitialized) {
+        setTimeout(() => {
+          setLoading(false);
+        }, 100);
+      }
     });
     return unsubscribe;
   }, []);
