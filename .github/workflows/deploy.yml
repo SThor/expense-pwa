@@ -4,6 +4,12 @@ on:
   push:
     branches: [main, integration, "feature/**"] # Triggers on main, integration, and all feature branches
   workflow_dispatch: # Allows manual triggering
+    inputs:
+      force_production:
+        description: 'Force deploy to production (instead of staging)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   deploy:
@@ -34,12 +40,14 @@ jobs:
 
       - name: Set deployment target
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ inputs.force_production }}" == "true" ]]; then
             echo "DEPLOY_PATH=/var/www/expense-pwa" >> $GITHUB_ENV
             echo "BACKUP_PATH=/var/www/expense-pwa-backup" >> $GITHUB_ENV
+            echo "🚀 Deploying to PRODUCTION"
           else
             echo "DEPLOY_PATH=/var/www/expense-pwa-staging" >> $GITHUB_ENV
             echo "BACKUP_PATH=/var/www/expense-pwa-staging-backup" >> $GITHUB_ENV
+            echo "🚀 Deploying to STAGING"
           fi
 
       - name: Build application
@@ -53,15 +61,16 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            # Set deployment paths based on branch
-            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            # Set deployment paths based on branch or manual override
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ inputs.force_production }}" == "true" ]]; then
               DEPLOY_PATH="/var/www/expense-pwa"
               BACKUP_PATH="/var/www/expense-pwa-backup"
+              echo "🚀 Deploying to PRODUCTION: $DEPLOY_PATH"
             else
               DEPLOY_PATH="/var/www/expense-pwa-staging"
               BACKUP_PATH="/var/www/expense-pwa-staging-backup"
+              echo "🚀 Deploying to STAGING: $DEPLOY_PATH"
             fi
-            echo "🚀 Deploying to: $DEPLOY_PATH"
 
             # Create deployment directory if it doesn't exist
             sudo mkdir -p $DEPLOY_PATH
@@ -96,13 +105,15 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            # Set deployment paths based on branch
-            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            # Set deployment paths based on branch or manual override
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ inputs.force_production }}" == "true" ]]; then
               DEPLOY_PATH="/var/www/expense-pwa"
               BACKUP_PATH="/var/www/expense-pwa-backup"
+              echo "📁 Moving files to PRODUCTION: $DEPLOY_PATH"
             else
               DEPLOY_PATH="/var/www/expense-pwa-staging"
               BACKUP_PATH="/var/www/expense-pwa-staging-backup"
+              echo "📁 Moving files to STAGING: $DEPLOY_PATH"
             fi
             echo "📁 Checking temp directory:"
             ls -la /tmp/expense-pwa-deploy/ || echo "Temp directory not found!"
