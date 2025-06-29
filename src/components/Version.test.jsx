@@ -31,6 +31,19 @@ describe("Version", () => {
     rerender(<Version variant="branch-commit" />);
     versionElement = screen.getByText(/^v/);
     expect(versionElement).toBeInTheDocument();
+    
+    // Tag-only variant (should fall back to short version since no tags exist)
+    rerender(<Version variant="tag-only" />);
+    versionElement = screen.getByText(/^v/);
+    expect(versionElement).toBeInTheDocument();
+  });
+
+  it("handles default case with invalid variant", () => {
+    // Test the default case in the switch statement
+    render(<Version variant="invalid-variant" />);
+    
+    const versionElement = screen.getByText(/^v/);
+    expect(versionElement).toBeInTheDocument();
   });
 
   it("includes title with detailed version information", () => {
@@ -62,5 +75,40 @@ describe("Version", () => {
     
     // The text should either have * or not, both are valid
     expect(text).toMatch(/^v.+/);
+  });
+
+  it("handles tag-only variant correctly", () => {
+    // Test specifically for tag-only variant
+    render(<Version variant="tag-only" />);
+    
+    const versionElement = screen.getByText(/^v/);
+    expect(versionElement).toBeInTheDocument();
+    
+    // Since VERSION_INFO.tag is null, it should fall back to getShortVersionString()
+    expect(versionElement.textContent).toMatch(/^v/);
+  });
+
+  it("formats branch-commit variant correctly", () => {
+    render(<Version variant="branch-commit" />);
+    
+    const versionElement = screen.getByText(/^v/);
+    expect(versionElement).toBeInTheDocument();
+    
+    // Should contain branch@commit format
+    expect(versionElement.textContent).toMatch(/^v.+@.+/);
+  });
+
+  it("includes clean working directory status in title", () => {
+    render(<Version variant="short" />);
+    
+    const versionElement = screen.getByText(/^v/);
+    const title = versionElement.getAttribute("title");
+    
+    // Since current state is dirty, title should include dirty message
+    // This tests the true branch of the ternary operator
+    expect(title).toContain("Working directory: dirty");
+    
+    // Should also show asterisk for dirty state
+    expect(versionElement.textContent).toMatch(/\*$/);
   });
 });

@@ -13,8 +13,14 @@ function getGitInfo() {
     // Get the short commit hash
     const commit = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
     
-    // Check if working directory is dirty
-    const isDirty = execSync('git diff --quiet || echo "dirty"', { encoding: 'utf8' }).trim() === 'dirty';
+    // Check if working directory is dirty (both staged and unstaged changes)
+    let isDirty = false;
+    try {
+      execSync('git diff --quiet', { encoding: 'utf8' });
+      execSync('git diff --cached --quiet', { encoding: 'utf8' });
+    } catch (e) {
+      isDirty = true;
+    }
     
     // Try to get the latest tag
     let tag = null;
