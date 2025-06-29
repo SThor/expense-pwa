@@ -26,30 +26,31 @@ jspm_packages/
 .DS_Store
 Thumbs.db
 
-# Optional: Mac ._ files
+# Mac ._ files
 ._*
 
-# Optional: coverage reports
+# Coverage reports
 coverage/
 
-# Optional: IDE files
+# IDE files
 .idea/
 *.sublime-workspace
 *.sublime-project
+*.code-workspace
 
-# Optional: Vite cache
+# Vite cache
 .vite/
 
-# Optional: TypeScript cache
+# TypeScript cache
 *.tsbuildinfo
 
-# Optional: Mac OS symbolic link files
+# Mac OS symbolic link files
 .AppleDouble
 
-# Optional: Windows shortcut files
+# Windows shortcut files
 *.lnk
 
-# Optional: PWA manifest icons (if generated during build)
+# PWA manifest icons (if generated during build)
 *.webmanifest
 
 # Auto-generated version file
