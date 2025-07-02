@@ -1,5 +1,15 @@
-import firebase from "firebase/compat/app";
-import "firebase/compat/auth";
+import { initializeApp } from "firebase/app";
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  signOut,
+  setPersistence,
+  browserLocalPersistence,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult
+} from "firebase/auth";
 import PropTypes from "prop-types";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -16,9 +26,9 @@ const firebaseConfig = {
   measurementId: "G-V5MLGBC0T9"
 };
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 const AuthContext = createContext();
 
@@ -29,16 +39,16 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     // Set auth persistence to LOCAL (default, but explicit)
-    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    setPersistence(auth, browserLocalPersistence);
     
     let isInitialized = false;
     
     // Check for redirect result first
     const checkRedirectResult = async () => {
       try {
-        const result = await firebase.auth().getRedirectResult();
+        const result = await getRedirectResult(auth);
         console.log("[AuthProvider] Redirect result:", result);
-        if (result.user) {
+        if (result?.user) {
           console.log("[AuthProvider] Redirect result user:", result.user);
           setUser(result.user);
           const t = await result.user.getIdToken();
@@ -54,7 +64,7 @@ export function AuthProvider({ children }) {
 
     checkRedirectResult();
 
-    const unsubscribe = firebase.auth().onAuthStateChanged(async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       console.log("[AuthProvider] Auth state changed:", firebaseUser);
       
       // Don't override user if we already got it from redirect result
@@ -94,10 +104,29 @@ export function AuthProvider({ children }) {
     return () => clearInterval(interval);
   }, [user]);
 
-  const logout = () => firebase.auth().signOut();
+  const logout = () => signOut(auth);
+
+  const signInWithGoogle = async (usePopup = true) => {
+    const provider = new GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
+    
+    try {
+      if (usePopup) {
+        const result = await signInWithPopup(auth, provider);
+        return result;
+      } else {
+        await signInWithRedirect(auth, provider);
+        return null; // Will be handled by redirect result
+      }
+    } catch (error) {
+      console.error("[AuthProvider] Google sign in error:", error);
+      throw error;
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, token, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, logout, loading, signInWithGoogle, auth }}>
       {children}
     </AuthContext.Provider>
   );
