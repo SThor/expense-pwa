@@ -81,11 +81,8 @@ export function AuthProvider({ children }) {
           setToken(null);
         }
         
-        // Add a small delay before setting loading to false to ensure auth state is stable
         if (!isInitialized) {
-          setTimeout(() => {
-            setLoading(false);
-          }, 100);
+          setLoading(false);
         }
       });
       return unsubscribe;
