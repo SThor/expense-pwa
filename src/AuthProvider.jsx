@@ -38,9 +38,10 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let unsubscribe;
     (async () => {
       // Set auth persistence to LOCAL (default, but explicit)
-      setPersistence(auth, browserLocalPersistence);
+      await setPersistence(auth, browserLocalPersistence);
       
       let isInitialized = false;
       
@@ -61,7 +62,7 @@ export function AuthProvider({ children }) {
         console.error("[AuthProvider] Redirect result error:", error);
       }
 
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
         console.log("[AuthProvider] Auth state changed:", firebaseUser);
         
         // Don't override user if we already got it from redirect result
@@ -85,8 +86,8 @@ export function AuthProvider({ children }) {
           setLoading(false);
         }
       });
-      return unsubscribe;
     })();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
   // Refresh token automatically every 50 minutes
