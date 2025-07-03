@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider.jsx";
 import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
 
-
 export default function LoginPage() {
   const { user, signInWithGoogle, auth } = useAuth();
   const navigate = useNavigate();
@@ -58,9 +57,9 @@ export default function LoginPage() {
   return (
     <CenteredCardLayout>
       <h1 className="text-2xl font-bold mb-6 text-sky-700">Sign In</h1>
-      
+
       {error && (
-        <div 
+        <div
           role="alert"
           className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded"
         >
@@ -92,7 +91,10 @@ export default function LoginPage() {
       {/* Email Sign In Form */}
       <form onSubmit={handleEmailSignIn} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Email
           </label>
           <div className="relative">
@@ -110,7 +112,10 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Password
           </label>
           <div className="relative">

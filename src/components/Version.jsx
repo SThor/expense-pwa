@@ -1,6 +1,10 @@
 import PropTypes from "prop-types";
 
-import { getVersionString, getShortVersionString, VERSION_INFO } from "../version.js";
+import {
+  getVersionString,
+  getShortVersionString,
+  VERSION_INFO,
+} from "../version.js";
 
 export default function Version({ variant = "short", className = "" }) {
   const getDisplayVersion = () => {

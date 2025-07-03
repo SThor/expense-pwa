@@ -13,31 +13,36 @@ export function AppProvider({ children }) {
   const [accounts, setAccounts] = useState([]);
   const ynabAPI = useMemo(
     () => (ynabToken ? new window.ynab.API(ynabToken) : null),
-    [ynabToken]
+    [ynabToken],
   );
   useEffect(() => {
     if (budgetId) {
       return;
     }
     if (!ynabAPI) {
-      console.warn('[AppContext] ynabAPI not available, skipping budgets fetch');
+      console.warn(
+        "[AppContext] ynabAPI not available, skipping budgets fetch",
+      );
       return;
     }
     // No budgetId: log available budgets for manual configuration
-    ynabAPI.budgets.getBudgets()
+    ynabAPI.budgets
+      .getBudgets()
       .then((res) => {
         const budgets = res.data.budgets;
         if (budgets && budgets.length > 0) {
-          console.warn('[AppContext] No YNAB budget id configured. Available budgets:');
-          budgets.forEach(b => {
+          console.warn(
+            "[AppContext] No YNAB budget id configured. Available budgets:",
+          );
+          budgets.forEach((b) => {
             console.warn(`  - ${b.name}: ${b.id}`);
           });
         } else {
-          console.warn('[AppContext] No budgets found for this YNAB account');
+          console.warn("[AppContext] No budgets found for this YNAB account");
         }
       })
       .catch((err) => {
-        console.error('[AppContext] Error fetching budgets:', err);
+        console.error("[AppContext] Error fetching budgets:", err);
       });
   }, [ynabAPI, budgetId]);
 
@@ -52,7 +57,7 @@ export function AppProvider({ children }) {
       accounts,
       setAccounts,
     }),
-    [ynabToken, ynabAPI, budgetId, accounts]
+    [ynabToken, ynabAPI, budgetId, accounts],
   );
 
   return (

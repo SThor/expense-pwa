@@ -6,7 +6,7 @@ on:
   workflow_dispatch: # Allows manual triggering
     inputs:
       force_production:
-        description: 'Force deploy to production (instead of staging)'
+        description: "Force deploy to production (instead of staging)"
         required: false
         default: false
         type: boolean

@@ -1,14 +1,14 @@
 import { initializeApp } from "firebase/app";
-import { 
-  getAuth, 
-  onAuthStateChanged, 
+import {
+  getAuth,
+  onAuthStateChanged,
   signOut,
   setPersistence,
   browserLocalPersistence,
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult
+  getRedirectResult,
 } from "firebase/auth";
 import PropTypes from "prop-types";
 import { createContext, useContext, useEffect, useState } from "react";
@@ -23,7 +23,7 @@ const firebaseConfig = {
   storageBucket: "settle-up-live.appspot.com",
   messagingSenderId: "817191222688",
   appId: "1:817191222688:web:6f1f6d1e01f53454aff8c5",
-  measurementId: "G-V5MLGBC0T9"
+  measurementId: "G-V5MLGBC0T9",
 };
 
 // Initialize Firebase
@@ -42,9 +42,9 @@ export function AuthProvider({ children }) {
     (async () => {
       // Set auth persistence to LOCAL (default, but explicit)
       await setPersistence(auth, browserLocalPersistence);
-      
+
       let isInitialized = false;
-      
+
       // Check for redirect result first
       try {
         const result = await getRedirectResult(auth);
@@ -64,12 +64,12 @@ export function AuthProvider({ children }) {
 
       unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
         console.log("[AuthProvider] Auth state changed:", firebaseUser);
-        
+
         // Don't override user if we already got it from redirect result
         if (isInitialized && firebaseUser) {
           return;
         }
-        
+
         setUser(firebaseUser);
         if (firebaseUser) {
           try {
@@ -81,7 +81,7 @@ export function AuthProvider({ children }) {
         } else {
           setToken(null);
         }
-        
+
         if (!isInitialized) {
           setLoading(false);
         }
@@ -104,9 +104,9 @@ export function AuthProvider({ children }) {
 
   const signInWithGoogle = async (usePopup = true) => {
     const provider = new GoogleAuthProvider();
-    provider.addScope('email');
-    provider.addScope('profile');
-    
+    provider.addScope("email");
+    provider.addScope("profile");
+
     try {
       if (usePopup) {
         const result = await signInWithPopup(auth, provider);
@@ -122,7 +122,9 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, logout, loading, signInWithGoogle, auth }}>
+    <AuthContext.Provider
+      value={{ user, token, logout, loading, signInWithGoogle, auth }}
+    >
       {children}
     </AuthContext.Provider>
   );

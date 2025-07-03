@@ -51,13 +51,13 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
     try {
       const data = await fetchSettleUpTransactions(
         settleUpToken,
-        formState.settleUpGroup.groupId
+        formState.settleUpGroup.groupId,
       );
       if (!data) return;
       const transactions = Object.values(data);
       const mostCommon = getMostCommonCategoryFromTransactions(
         transactions,
-        payeeName
+        payeeName,
       );
       if (mostCommon) {
         setFormState((prev) => ({ ...prev, settleUpCategory: mostCommon }));
@@ -86,7 +86,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
           <GroupedAutocomplete
             id="payee-autocomplete"
             value={formState.payee}
-           onChange={(label, value) => {
+            onChange={(label, value) => {
               setFormState((prev) => ({
                 ...prev,
                 payee: label,
@@ -119,7 +119,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
                 const cat = categories.find((c) => c.id === catId);
                 if (!cat) return null;
                 const group = categoryGroups.find((g) =>
-                  g.categories.some((c) => c.id === catId)
+                  g.categories.some((c) => c.id === catId),
                 );
                 return (
                   <SuggestedCategoryPill
@@ -186,9 +186,9 @@ DetailsSection.propTypes = {
         PropTypes.shape({
           label: PropTypes.string.isRequired,
           value: PropTypes.any.isRequired,
-        })
+        }),
       ).isRequired,
-    })
+    }),
   ).isRequired,
   groupedCategories: PropTypes.arrayOf(
     PropTypes.shape({
@@ -197,25 +197,25 @@ DetailsSection.propTypes = {
         PropTypes.shape({
           label: PropTypes.string.isRequired,
           value: PropTypes.any.isRequired,
-        })
+        }),
       ).isRequired,
-    })
+    }),
   ).isRequired,
   categories: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.any.isRequired,
       name: PropTypes.string.isRequired,
-    })
+    }),
   ).isRequired,
   categoryGroups: PropTypes.arrayOf(
     PropTypes.shape({
       categories: PropTypes.arrayOf(
         PropTypes.shape({
           id: PropTypes.any.isRequired,
-        })
+        }),
       ).isRequired,
       name: PropTypes.string,
-    })
+    }),
   ).isRequired,
   suggestedCategoryIds: PropTypes.arrayOf(PropTypes.any).isRequired,
 };

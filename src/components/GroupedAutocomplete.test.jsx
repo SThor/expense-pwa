@@ -14,7 +14,7 @@ describe("GroupedAutocomplete", () => {
 
   afterEach(async () => {
     // Wait for any pending timeouts to complete
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise((resolve) => setTimeout(resolve, 150));
   });
 
   test("renders with initial value", () => {
@@ -35,7 +35,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     expect(screen.getByDisplayValue("item-1a")).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -90,7 +90,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -121,7 +121,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -160,7 +160,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -192,7 +192,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         // onCreate omitted
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -223,7 +223,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -255,7 +255,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const clearButton = screen.getByRole("button", { name: /clear/i });
@@ -284,7 +284,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -317,7 +317,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -325,7 +325,7 @@ describe("GroupedAutocomplete", () => {
 
     // Should show create option
     expect(
-      screen.getByText('Create "new-item-9" Test Field')
+      screen.getByText('Create "new-item-9" Test Field'),
     ).toBeInTheDocument();
 
     // Find and click the create option
@@ -355,7 +355,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -390,7 +390,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -422,7 +422,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -465,7 +465,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -482,14 +482,12 @@ describe("GroupedAutocomplete", () => {
     expect(mockOnCreate).not.toHaveBeenCalled();
   });
 
-    test("closes dropdown on outside click", async () => {
+  test("closes dropdown on outside click", async () => {
     const user = userEvent.setup();
     const testData = [
       {
         label: "Group-Outside",
-        items: [
-          { label: "item-outside", value: "val-outside" },
-        ],
+        items: [{ label: "item-outside", value: "val-outside" }],
       },
     ];
 
@@ -503,7 +501,7 @@ describe("GroupedAutocomplete", () => {
           placeholder="Test Field"
           onCreate={mockOnCreate}
         />
-      </div>
+      </div>,
     );
 
     const input = screen.getByRole("textbox");
@@ -535,7 +533,7 @@ describe("GroupedAutocomplete", () => {
         groupedItems={testData}
         placeholder="Test Field"
         onCreate={mockOnCreate}
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -550,5 +548,4 @@ describe("GroupedAutocomplete", () => {
       expect(screen.queryByText("No matches")).not.toBeInTheDocument();
     });
   });
-
 });

@@ -14,10 +14,7 @@ import AppToggles from "./components/AppToggles.jsx";
 import Collapsible from "./components/Collapsible.jsx";
 import DetailsSection from "./components/DetailsSection.jsx";
 import SwileAmountSection from "./components/SwileAmountSection.jsx";
-import {
-  DEFAULT_SWILE_MILLIUNITS,
-  DEFAULT_CURRENCY,
-} from "./constants";
+import { DEFAULT_SWILE_MILLIUNITS, DEFAULT_CURRENCY } from "./constants";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { formStatePropType } from "./propTypes.js";
 import { getClosestLocation } from "./utils/ynabUtils.js";
@@ -48,16 +45,20 @@ export default function App({ onSubmit, formState, setFormState }) {
   // Fetch accounts, payees, and categories dynamically when budgetId or ynabAPI changes
   useEffect(() => {
     if (!ynabAPI || !budgetId) {
-      console.warn('[YNAB] Skipping fetch: ynabAPI or budgetId missing', { ynabAPI, budgetId });
+      console.warn("[YNAB] Skipping fetch: ynabAPI or budgetId missing", {
+        ynabAPI,
+        budgetId,
+      });
       return;
     }
     // Fetch accounts
-    ynabAPI.accounts.getAccounts(budgetId)
+    ynabAPI.accounts
+      .getAccounts(budgetId)
       .then((res) => {
         setAccounts(res.data.accounts);
       })
       .catch((err) => {
-        console.error('[YNAB] Error fetching accounts:', err);
+        console.error("[YNAB] Error fetching accounts:", err);
       });
     // Fetch payees and categories
     Promise.all([
@@ -71,7 +72,7 @@ export default function App({ onSubmit, formState, setFormState }) {
         setCategories(allGroups.flatMap((g) => g.categories));
       })
       .catch((err) => {
-        console.error('[YNAB] Error fetching payees or categories:', err);
+        console.error("[YNAB] Error fetching payees or categories:", err);
       });
   }, [ynabAPI, budgetId]);
 
@@ -184,26 +185,32 @@ export default function App({ onSubmit, formState, setFormState }) {
     fetchSettleUpUserGroups(settleUpToken, settleUpUser.uid)
       .then((data) => {
         console.log("[SettleUp] Groups fetched:", data);
-        setFormState((prev) => ({...prev, settleUpGroups: data}));
+        setFormState((prev) => ({ ...prev, settleUpGroups: data }));
         setSettleUpResult("");
       })
       .catch((err) => {
         console.error("[SettleUp] Error fetching groups:", err);
         setSettleUpResult("Error fetching groups: " + err.message);
       });
-  }, [settleUpUser?.uid]);  // Find test group or fallback to first group
+  }, [settleUpUser?.uid]); // Find test group or fallback to first group
   useEffect(() => {
-    if (!formState.settleUpGroups || !settleUpToken || !settleUpUser.uid) return;
+    if (!formState.settleUpGroups || !settleUpToken || !settleUpUser.uid)
+      return;
     const groupIds = Object.keys(formState.settleUpGroups);
     const targetGroupName = import.meta.env.VITE_SETTLEUP_GROUP_NAME;
-    
+
     (async () => {
       let found = null;
-      let shouldSearchForSpecificGroup = targetGroupName && targetGroupName.trim() !== '';
-      
+      let shouldSearchForSpecificGroup =
+        targetGroupName && targetGroupName.trim() !== "";
+
       if (!shouldSearchForSpecificGroup) {
-        console.warn('[SettleUp] VITE_SETTLEUP_GROUP_NAME is not defined or empty, skipping group search and using first group');
-        setSettleUpResult("No target group name configured. Using your first group.");
+        console.warn(
+          "[SettleUp] VITE_SETTLEUP_GROUP_NAME is not defined or empty, skipping group search and using first group",
+        );
+        setSettleUpResult(
+          "No target group name configured. Using your first group.",
+        );
       } else {
         // Search for the specific group
         for (const groupId of groupIds) {
@@ -221,23 +228,25 @@ export default function App({ onSubmit, formState, setFormState }) {
             setSettleUpResult("Error fetching group: " + err.message);
           }
         }
-        
+
         if (found) {
           setSettleUpResult(""); // Clear any previous messages on success
         } else {
           setSettleUpResult(
-            "No group named '" + targetGroupName + "' found. Using your first group instead.",
+            "No group named '" +
+              targetGroupName +
+              "' found. Using your first group instead.",
           );
         }
       }
-      
+
       // If no specific group found (or we skipped the search), use first group
       if (!found && groupIds.length > 0) {
         const groupId = groupIds[0];
         const data = await fetchSettleUpGroup(settleUpToken, groupId);
         found = { groupId, ...data };
       }
-      
+
       setFormState((prev) => ({
         ...prev,
         settleUpGroup: found,
@@ -247,7 +256,11 @@ export default function App({ onSubmit, formState, setFormState }) {
 
   // Fetch members when group changes
   useEffect(() => {
-    if (!formState.settleUpGroup || !formState.settleUpGroup.groupId || !settleUpToken)
+    if (
+      !formState.settleUpGroup ||
+      !formState.settleUpGroup.groupId ||
+      !settleUpToken
+    )
       return;
     fetchSettleUpMembers(settleUpToken, formState.settleUpGroup.groupId)
       .then((data) => {
@@ -255,8 +268,7 @@ export default function App({ onSubmit, formState, setFormState }) {
           const arr = Object.entries(data).map(([id, m]) => ({ id, ...m }));
           setFormState((prev) => ({
             ...prev,
-            settleUpMembers: arr
-              .filter((m) => m.active !== false),
+            settleUpMembers: arr.filter((m) => m.active !== false),
             settleUpPayerId: arr[0]?.id || "",
           }));
         }
@@ -273,7 +285,10 @@ export default function App({ onSubmit, formState, setFormState }) {
   // Reset swileMilliunits to default when toggles change
   useEffect(() => {
     if (formState.account.swile && formState.account.bourso) {
-      setFormState((prev) => ({ ...prev, swileMilliunits: DEFAULT_SWILE_MILLIUNITS }));
+      setFormState((prev) => ({
+        ...prev,
+        swileMilliunits: DEFAULT_SWILE_MILLIUNITS,
+      }));
     }
   }, [formState.account.swile, formState.account.bourso]);
 
@@ -284,7 +299,12 @@ export default function App({ onSubmit, formState, setFormState }) {
     if (formState.target.ynab && formState.amountMilliunits !== 0) {
       setFormState((prev) => ({ ...prev, showAccounts: true }));
     }
-    if (formState.amountMilliunits !== 0 && (formState.target.settleup || formState.account.bourso || formState.account.swile)) {
+    if (
+      formState.amountMilliunits !== 0 &&
+      (formState.target.settleup ||
+        formState.account.bourso ||
+        formState.account.swile)
+    ) {
       setFormState((prev) => ({ ...prev, showDetails: true }));
     }
     setShowSwile(
@@ -339,13 +359,11 @@ export default function App({ onSubmit, formState, setFormState }) {
           account={formState.account}
           setAccount={(updater) =>
             setFormState((prev) => ({
-                ...prev,
-                account:
-                  typeof updater === "function"
-                    ? updater(prev.account)
-                    : updater,
-              }))
-            }
+              ...prev,
+              account:
+                typeof updater === "function" ? updater(prev.account) : updater,
+            }))
+          }
         />
       </Collapsible>
 
@@ -372,7 +390,7 @@ export default function App({ onSubmit, formState, setFormState }) {
           suggestedCategoryIds={suggestedCategoryIds}
         />
       </Collapsible>
-      
+
       <div
         className="text-sm mt-2"
         style={{ color: settleUpResult.startsWith("✅") ? "green" : "red" }}

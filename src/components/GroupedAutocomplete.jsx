@@ -131,7 +131,7 @@ function GroupedAutocomplete({
       }
 
       // Find the value that corresponds to the input label
-      const matchingItem = flatList.find(item => item.label === input);
+      const matchingItem = flatList.find((item) => item.label === input);
       if (matchingItem) {
         // Exact match found
         onChange(input, matchingItem.value);

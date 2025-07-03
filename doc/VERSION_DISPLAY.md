@@ -7,6 +7,7 @@ This application automatically displays version information on all pages.
 1. **Version Generation**: The `scripts/generate-version.js` script automatically generates version information from git at build time.
 
 2. **Version Component**: The `Version` component displays the version information with different variants:
+
    - `short`: Shows just the commit hash (or tag if available)
    - `full`: Shows the full version string (branch-commit or tag)
    - `branch-commit`: Shows branch@commit format
@@ -23,7 +24,7 @@ The version information includes:
 - **Git Tag**: If available (currently none)
 - **Branch**: Current git branch name
 - **Commit**: Short commit hash
-- **Dirty State**: Shows asterisk (*) if working directory has uncommitted changes
+- **Dirty State**: Shows asterisk (\*) if working directory has uncommitted changes
 - **Build Time**: When the version file was generated
 
 ## Location

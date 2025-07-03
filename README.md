@@ -56,7 +56,7 @@ A Progressive Web App for quickly adding expenses to both [YNAB (You Need A Budg
 
 4. **Configure your `.env` file**
 
-    Update the `.env` file with your YNAB Personal Access Token and SettleUp Firebase configuration.
+   Update the `.env` file with your YNAB Personal Access Token and SettleUp Firebase configuration.
 
 5. **Start the development server**
 
