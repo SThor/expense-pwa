@@ -141,7 +141,7 @@ describe("GroupedAutocomplete", () => {
     expect(mockOnCreate).not.toHaveBeenCalled();
   });
 
-  test("calls onCreate on blur with non-existing item", async () => {
+  test("calls onCreate on blur with non-existing item (with onCreate)", async () => {
     const user = userEvent.setup();
     const testData = [
       {
@@ -170,6 +170,37 @@ describe("GroupedAutocomplete", () => {
     await waitFor(() => {
       expect(mockOnCreate).toHaveBeenCalledWith("new-item-5");
       expect(mockOnChange).not.toHaveBeenCalled();
+    });
+  });
+
+  test("calls onChange with empty strings on blur with non-existing item (no onCreate)", async () => {
+    const user = userEvent.setup();
+    const testData = [
+      {
+        label: "Group-5",
+        items: [
+          { label: "item-5a", value: "val-5a" },
+          { label: "item-5b", value: "val-5b" },
+        ],
+      },
+    ];
+
+    render(
+      <GroupedAutocomplete
+        value=""
+        onChange={mockOnChange}
+        groupedItems={testData}
+        placeholder="Test Field"
+        // onCreate omitted
+      />
+    );
+
+    const input = screen.getByRole("textbox");
+    await user.type(input, "new-item-5");
+    await user.tab(); // Blur
+
+    await waitFor(() => {
+      expect(mockOnChange).toHaveBeenCalledWith("", "");
     });
   });
 
@@ -450,4 +481,74 @@ describe("GroupedAutocomplete", () => {
     expect(mockOnChange).toHaveBeenCalledTimes(1);
     expect(mockOnCreate).not.toHaveBeenCalled();
   });
+
+    test("closes dropdown on outside click", async () => {
+    const user = userEvent.setup();
+    const testData = [
+      {
+        label: "Group-Outside",
+        items: [
+          { label: "item-outside", value: "val-outside" },
+        ],
+      },
+    ];
+
+    render(
+      <div>
+        <button data-testid="outside">Outside</button>
+        <GroupedAutocomplete
+          value=""
+          onChange={mockOnChange}
+          groupedItems={testData}
+          placeholder="Test Field"
+          onCreate={mockOnCreate}
+        />
+      </div>
+    );
+
+    const input = screen.getByRole("textbox");
+    await user.click(input); // Open dropdown
+    expect(screen.getByText("item-outside")).toBeInTheDocument();
+
+    // Click outside
+    await user.click(screen.getByTestId("outside"));
+
+    // Dropdown should close
+    await waitFor(() => {
+      expect(screen.queryByText("item-outside")).not.toBeInTheDocument();
+    });
+  });
+
+  test("closes dropdown on Enter when no item is highlighted", async () => {
+    const user = userEvent.setup();
+    const testData = [
+      {
+        label: "Group-Empty",
+        items: [],
+      },
+    ];
+
+    render(
+      <GroupedAutocomplete
+        value=""
+        onChange={mockOnChange}
+        groupedItems={testData}
+        placeholder="Test Field"
+        onCreate={mockOnCreate}
+      />
+    );
+
+    const input = screen.getByRole("textbox");
+    await user.click(input); // Open dropdown
+    expect(screen.getByText("No matches")).toBeInTheDocument();
+
+    // Press Enter (no items to select)
+    await user.keyboard("{Enter}");
+
+    // Dropdown should close
+    await waitFor(() => {
+      expect(screen.queryByText("No matches")).not.toBeInTheDocument();
+    });
+  });
+
 });
