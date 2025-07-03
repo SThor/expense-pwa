@@ -1,12 +1,13 @@
 import PropTypes from "prop-types";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState, useEffect } from "react";
 
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
   // YNAB
+  // Set default budgetId if missing and ynabAPI is available
   const defaultYnabToken = import.meta.env.VITE_YNAB_TOKEN || "";
-  const defaultBudgetId = localStorage.getItem("ynab_budget_id") || "";
+  const defaultBudgetId = import.meta.env.VITE_YNAB_BUDGET_ID || "";
   const [ynabToken, setYnabToken] = useState(defaultYnabToken);
   const [budgetId, setBudgetId] = useState(defaultBudgetId);
   const [accounts, setAccounts] = useState([]);
@@ -14,10 +15,31 @@ export function AppProvider({ children }) {
     () => (ynabToken ? new window.ynab.API(ynabToken) : null),
     [ynabToken]
   );
-  const setBudgetIdPersist = (id) => {
-    setBudgetId(id);
-    localStorage.setItem("ynab_budget_id", id);
-  };
+  useEffect(() => {
+    if (budgetId) {
+      return;
+    }
+    if (!ynabAPI) {
+      console.warn('[AppContext] ynabAPI not available, skipping budgets fetch');
+      return;
+    }
+    // No budgetId: log available budgets for manual configuration
+    ynabAPI.budgets.getBudgets()
+      .then((res) => {
+        const budgets = res.data.budgets;
+        if (budgets && budgets.length > 0) {
+          console.warn('[AppContext] No YNAB budget id configured. Available budgets:');
+          budgets.forEach(b => {
+            console.warn(`  - ${b.name}: ${b.id}`);
+          });
+        } else {
+          console.warn('[AppContext] No budgets found for this YNAB account');
+        }
+      })
+      .catch((err) => {
+        console.error('[AppContext] Error fetching budgets:', err);
+      });
+  }, [ynabAPI, budgetId]);
 
   const contextValue = useMemo(
     () => ({
@@ -26,7 +48,7 @@ export function AppProvider({ children }) {
       setYnabToken,
       ynabAPI,
       budgetId,
-      setBudgetId: setBudgetIdPersist,
+      setBudgetId,
       accounts,
       setAccounts,
     }),

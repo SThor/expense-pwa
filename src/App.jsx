@@ -47,21 +47,32 @@ export default function App({ onSubmit, formState, setFormState }) {
 
   // Fetch accounts, payees, and categories dynamically when budgetId or ynabAPI changes
   useEffect(() => {
-    if (!ynabAPI || !budgetId) return;
+    if (!ynabAPI || !budgetId) {
+      console.warn('[YNAB] Skipping fetch: ynabAPI or budgetId missing', { ynabAPI, budgetId });
+      return;
+    }
     // Fetch accounts
-    ynabAPI.accounts.getAccounts(budgetId).then((res) => {
-      setAccounts(res.data.accounts);
-    });
+    ynabAPI.accounts.getAccounts(budgetId)
+      .then((res) => {
+        setAccounts(res.data.accounts);
+      })
+      .catch((err) => {
+        console.error('[YNAB] Error fetching accounts:', err);
+      });
     // Fetch payees and categories
     Promise.all([
       ynabAPI.payees.getPayees(budgetId),
       ynabAPI.categories.getCategories(budgetId),
-    ]).then(([payeesRes, catRes]) => {
-      setPayees(payeesRes.data.payees);
-      const allGroups = catRes.data.category_groups;
-      setCategoryGroups(allGroups);
-      setCategories(allGroups.flatMap((g) => g.categories));
-    });
+    ])
+      .then(([payeesRes, catRes]) => {
+        setPayees(payeesRes.data.payees);
+        const allGroups = catRes.data.category_groups;
+        setCategoryGroups(allGroups);
+        setCategories(allGroups.flatMap((g) => g.categories));
+      })
+      .catch((err) => {
+        console.error('[YNAB] Error fetching payees or categories:', err);
+      });
   }, [ynabAPI, budgetId]);
 
   // When payeeId changes, fetch their transactions and suggest categories
