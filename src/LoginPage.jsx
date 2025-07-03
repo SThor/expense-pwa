@@ -23,6 +23,9 @@ export default function LoginPage() {
     }
   }, [user, navigate]);
 
+  // Prevent rendering if user is authenticated (prevents flicker)
+  if (user) return null;
+
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError("");
