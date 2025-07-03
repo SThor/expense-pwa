@@ -8,10 +8,10 @@ const Collapsible = ({ isOpened, children }) => {
     <AnimatePresence>
       {isOpened && (
         <motion.div
+          className={isAnimating ? "overflow-hidden" : "overflow-visible"}
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: "auto", opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          style={{ overflow: isAnimating ? "hidden" : "visible" }}
           onAnimationStart={() => setIsAnimating(true)}
           onAnimationComplete={() => setIsAnimating(false)}
         >
