@@ -38,13 +38,13 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set auth persistence to LOCAL (default, but explicit)
-    setPersistence(auth, browserLocalPersistence);
-    
-    let isInitialized = false;
-    
-    // Check for redirect result first
-    const checkRedirectResult = async () => {
+    (async () => {
+      // Set auth persistence to LOCAL (default, but explicit)
+      setPersistence(auth, browserLocalPersistence);
+      
+      let isInitialized = false;
+      
+      // Check for redirect result first
       try {
         const result = await getRedirectResult(auth);
         console.log("[AuthProvider] Redirect result:", result);
@@ -60,38 +60,36 @@ export function AuthProvider({ children }) {
       } catch (error) {
         console.error("[AuthProvider] Redirect result error:", error);
       }
-    };
 
-    checkRedirectResult();
-
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("[AuthProvider] Auth state changed:", firebaseUser);
-      
-      // Don't override user if we already got it from redirect result
-      if (isInitialized && firebaseUser) {
-        return;
-      }
-      
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        try {
-          const t = await firebaseUser.getIdToken();
-          setToken(t);
-        } catch (error) {
-          console.error("[AuthProvider] Token error:", error);
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        console.log("[AuthProvider] Auth state changed:", firebaseUser);
+        
+        // Don't override user if we already got it from redirect result
+        if (isInitialized && firebaseUser) {
+          return;
         }
-      } else {
-        setToken(null);
-      }
-      
-      // Add a small delay before setting loading to false to ensure auth state is stable
-      if (!isInitialized) {
-        setTimeout(() => {
-          setLoading(false);
-        }, 100);
-      }
-    });
-    return unsubscribe;
+        
+        setUser(firebaseUser);
+        if (firebaseUser) {
+          try {
+            const t = await firebaseUser.getIdToken();
+            setToken(t);
+          } catch (error) {
+            console.error("[AuthProvider] Token error:", error);
+          }
+        } else {
+          setToken(null);
+        }
+        
+        // Add a small delay before setting loading to false to ensure auth state is stable
+        if (!isInitialized) {
+          setTimeout(() => {
+            setLoading(false);
+          }, 100);
+        }
+      });
+      return unsubscribe;
+    })();
   }, []);
 
   // Refresh token automatically every 50 minutes
