@@ -1,10 +1,11 @@
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaGoogle, FaEnvelope, FaLock } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "./AuthProvider.jsx";
 import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
+
 
 export default function LoginPage() {
   const { user, signInWithGoogle, auth } = useAuth();
@@ -14,10 +15,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  if (user) {
-    navigate("/", { replace: true });
-    return null;
-  }
+  // Only redirect after render, not during
+  // This avoids React's setState-in-render warning
+  useEffect(() => {
+    if (user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
