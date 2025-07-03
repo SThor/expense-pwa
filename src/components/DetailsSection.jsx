@@ -26,21 +26,21 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
 
   // Fonction commune pour extraire l'emoji et mettre à jour la catégorie
   const updateCategoryWithEmoji = (categoryName, categoryId) => {
-    let newSettleUpCategory = formState.settleUpCategory;
-
-    // Toujours extraire l'emoji si la catégorie en a un
-    if (categoryName) {
-      const emojiMatch = categoryName.match(/^\p{Emoji}/u);
-      if (emojiMatch) {
-        newSettleUpCategory = emojiMatch[0];
+    setFormState((prev) => {
+      let newSettleUpCategory = prev.settleUpCategory;
+      // Toujours extraire l'emoji si la catégorie en a un
+      if (categoryName) {
+        const emojiMatch = categoryName.match(/^\p{Emoji}/u);
+        if (emojiMatch) {
+          newSettleUpCategory = emojiMatch[0];
+        }
       }
-    }
-
-    setFormState({
-      ...formState,
-      category: categoryName,
-      categoryId: categoryId,
-      settleUpCategory: newSettleUpCategory,
+      return {
+        ...prev,
+        category: categoryName,
+        categoryId: categoryId,
+        settleUpCategory: newSettleUpCategory,
+      };
     });
   };
   // Fonction pour l'autocomplétion SettleUp
@@ -80,22 +80,22 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
           <EmojiCategoryButton
             value={formState.settleUpCategory}
             onChange={(val) =>
-              setFormState({ ...formState, settleUpCategory: val })
+              setFormState((prev) => ({ ...prev, settleUpCategory: val }))
             }
           />
           <GroupedAutocomplete
             id="payee-autocomplete"
             value={formState.payee}
-            onChange={(label, value) => {
-              setFormState({
-                ...formState,
+           onChange={(label, value) => {
+              setFormState((prev) => ({
+                ...prev,
                 payee: label,
                 payeeId: value,
                 // Reset settleUpCategory if payee is cleared
                 settleUpCategory: label
-                  ? formState.settleUpCategory
+                  ? prev.settleUpCategory
                   : DEFAULT_SETTLEUP_CATEGORY,
-              });
+              }));
               if (label) {
                 triggerSettleUpAutocomplete(label);
               }
@@ -103,7 +103,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
             groupedItems={groupedPayees}
             placeholder="Payee"
             onCreate={(val) => {
-              setFormState({ ...formState, payee: val, payeeId: "" });
+              setFormState((prev) => ({ ...prev, payee: val, payeeId: "" }));
             }}
           />
         </div>
@@ -168,7 +168,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
           placeholder="Description"
           value={formState.description}
           onChange={(e) =>
-            setFormState({ ...formState, description: e.target.value })
+            setFormState((prev) => ({ ...prev, description: e.target.value }))
           }
         />
       </div>

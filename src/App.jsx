@@ -273,7 +273,7 @@ export default function App({ onSubmit, formState, setFormState }) {
   // Reset swileMilliunits to default when toggles change
   useEffect(() => {
     if (formState.account.swile && formState.account.bourso) {
-      setFormState({ ...formState, swileMilliunits: DEFAULT_SWILE_MILLIUNITS });
+      setFormState((prev) => ({ ...prev, swileMilliunits: DEFAULT_SWILE_MILLIUNITS }));
     }
   }, [formState.account.swile, formState.account.bourso]);
 

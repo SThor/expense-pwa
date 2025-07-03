@@ -14,6 +14,7 @@ function GroupedAutocomplete({
   const [highlighted, setHighlighted] = useState({ groupIdx: 0, itemIdx: 0 });
   const inputRef = useRef();
   const dropdownRef = useRef();
+  const ignoreBlurRef = useRef(false);
   const userFocusRef = useRef(false);
   const userInputRef = useRef(false);
   const justClearedRef = useRef(false);
@@ -108,11 +109,20 @@ function GroupedAutocomplete({
   }
   function handleBlur() {
     setTimeout(() => {
+      if (ignoreBlurRef.current) {
+        ignoreBlurRef.current = false;
+        return;
+      }
       setOpen(false);
 
       if (!input) {
         // Empty input - treat as clear
         onChange("", "");
+        return;
+      }
+
+      // If the value prop matches the input, do nothing (avoid double-clear)
+      if (value === input) {
         return;
       }
 
@@ -223,6 +233,9 @@ function GroupedAutocomplete({
             minWidth: "100%",
             marginTop: 2,
             transition: "box-shadow 0.2s",
+          }}
+          onMouseDown={() => {
+            ignoreBlurRef.current = true;
           }}
         >
           {input &&
