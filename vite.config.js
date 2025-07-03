@@ -8,14 +8,14 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // Custom plugin to handle YNAB browser build
 const ynabPlugin = () => ({
-  name: 'ynab-plugin',
+  name: "ynab-plugin",
   configureServer(server) {
     // Serve YNAB file during development
-    server.middlewares.use('/ynab.js', (req, res, next) => {
+    server.middlewares.use("/ynab.js", (req, res, next) => {
       try {
-        const ynabPath = resolve('node_modules/ynab/dist/browser/ynab.js');
-        const content = readFileSync(ynabPath, 'utf-8');
-        res.setHeader('Content-Type', 'application/javascript');
+        const ynabPath = resolve("node_modules/ynab/dist/browser/ynab.js");
+        const content = readFileSync(ynabPath, "utf-8");
+        res.setHeader("Content-Type", "application/javascript");
         res.end(content);
       } catch (error) {
         next(error);
@@ -25,19 +25,19 @@ const ynabPlugin = () => ({
   generateBundle(options, bundle) {
     // Copy YNAB file directly to dist during build
     try {
-      const ynabPath = resolve('node_modules/ynab/dist/browser/ynab.js');
-      const content = readFileSync(ynabPath, 'utf-8');
-      
+      const ynabPath = resolve("node_modules/ynab/dist/browser/ynab.js");
+      const content = readFileSync(ynabPath, "utf-8");
+
       // Add the file to the bundle
       this.emitFile({
-        type: 'asset',
-        fileName: 'ynab.js',
-        source: content
+        type: "asset",
+        fileName: "ynab.js",
+        source: content,
       });
     } catch (error) {
-      this.error('Failed to copy YNAB browser build: ' + error.message);
+      this.error("Failed to copy YNAB browser build: " + error.message);
     }
-  }
+  },
 });
 
 export default defineConfig({

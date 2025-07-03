@@ -2,6 +2,8 @@ import PropTypes from "prop-types";
 import { useState, useRef, useEffect } from "react";
 import { MdAddCircle, MdArrowDropDown, MdClear } from "react-icons/md";
 
+import { AUTOCOMPLETE_BLUR_TIMEOUT_MS } from "../constants.js";
+
 function GroupedAutocomplete({
   value,
   onChange,
@@ -14,6 +16,7 @@ function GroupedAutocomplete({
   const [highlighted, setHighlighted] = useState({ groupIdx: 0, itemIdx: 0 });
   const inputRef = useRef();
   const dropdownRef = useRef();
+  const ignoreBlurRef = useRef(false);
   const userFocusRef = useRef(false);
   const userInputRef = useRef(false);
   const justClearedRef = useRef(false);
@@ -106,26 +109,40 @@ function GroupedAutocomplete({
       setOpen(false);
     }
   }
+  // The timeout allows dropdown click events to register before the input loses focus and closes the dropdown.
+  // This prevents race conditions where a click on a dropdown item would be ignored due to blur.
   function handleBlur() {
     setTimeout(() => {
+      if (ignoreBlurRef.current) {
+        ignoreBlurRef.current = false;
+        return;
+      }
       setOpen(false);
-      
+
       if (!input) {
         // Empty input - treat as clear
         onChange("", "");
         return;
       }
-      
+
+      // If the value prop matches the input, do nothing (avoid double-clear)
+      if (value === input) {
+        return;
+      }
+
       // Find the value that corresponds to the input label
-      const matchingItem = flatList.find(item => item.label === input);
+      const matchingItem = flatList.find((item) => item.label === input);
       if (matchingItem) {
         // Exact match found
         onChange(input, matchingItem.value);
-      } else {
-        // No match - create new item
+      } else if (typeof onCreate === "function") {
+        // No match - create new item if allowed
         onCreate(input);
+      } else {
+        // No match and cannot create: set to empty/null
+        onChange("", "");
       }
-    }, 120);
+    }, AUTOCOMPLETE_BLUR_TIMEOUT_MS);
   }
 
   // Only track user focus for suppressOpen logic
@@ -221,9 +238,13 @@ function GroupedAutocomplete({
             marginTop: 2,
             transition: "box-shadow 0.2s",
           }}
+          onMouseDown={() => {
+            ignoreBlurRef.current = true;
+          }}
         >
           {input &&
-            !flatList.some((item) => item.label === input) && (
+            !flatList.some((item) => item.label === input) &&
+            typeof onCreate === "function" && (
               <div
                 className="cursor-pointer px-3 py-2 hover:bg-blue-50 text-blue-700 flex items-center"
                 onClick={(e) => {
@@ -295,7 +316,7 @@ GroupedAutocomplete.propTypes = {
     }),
   ).isRequired,
   placeholder: PropTypes.string,
-  onCreate: PropTypes.func.isRequired, // (input: string) => void
+  onCreate: PropTypes.func, // (input: string) => void, optional. If provided, allows creating new items when no match is found.
 };
 
 export default GroupedAutocomplete;

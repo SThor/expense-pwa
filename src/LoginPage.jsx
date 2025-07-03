@@ -15,11 +15,15 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   // Handle navigation when user is authenticated
+  // Only redirect after render, not during
   useEffect(() => {
     if (user) {
       navigate("/", { replace: true });
     }
   }, [user, navigate]);
+
+  // Prevent rendering if user is authenticated (prevents flicker)
+  if (user) return null;
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -53,9 +57,9 @@ export default function LoginPage() {
   return (
     <CenteredCardLayout>
       <h1 className="text-2xl font-bold mb-6 text-sky-700">Sign In</h1>
-      
+
       {error && (
-        <div 
+        <div
           role="alert"
           className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded"
         >
@@ -87,7 +91,10 @@ export default function LoginPage() {
       {/* Email Sign In Form */}
       <form onSubmit={handleEmailSignIn} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Email
           </label>
           <div className="relative">
@@ -105,7 +112,10 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Password
           </label>
           <div className="relative">

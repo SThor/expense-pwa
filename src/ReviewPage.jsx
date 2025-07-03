@@ -2,7 +2,10 @@ import PropTypes from "prop-types";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { addSettleUpTransaction, fetchSettleUpPermissions } from "./api/settleup";
+import {
+  addSettleUpTransaction,
+  fetchSettleUpPermissions,
+} from "./api/settleup";
 import { useAppContext } from "./AppContext.jsx";
 import { useAuth } from "./AuthProvider.jsx";
 import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
@@ -115,7 +118,10 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
       setResult("❌ Please fill all required fields before submitting.");
       return;
     }
-    const permissions = await fetchSettleUpPermissions(token, formState.settleUpGroup.groupId);
+    const permissions = await fetchSettleUpPermissions(
+      token,
+      formState.settleUpGroup.groupId,
+    );
     if (!permissions[user.uid] || permissions[user.uid].level < 20) {
       console.warn("[ReviewPage] Insufficient permissions for user:", user.uid);
       setResult("❌ You do not have permission to submit this transaction.");
@@ -125,7 +131,9 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
     const now = Date.now();
     const tx = {
       category:
-        formState.settleUpCategory === "∅" ? undefined : formState.settleUpCategory,
+        formState.settleUpCategory === "∅"
+          ? undefined
+          : formState.settleUpCategory,
       currencyCode: formState.settleUpCurrency || "EUR",
       dateTime: now,
       items: [

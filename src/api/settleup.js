@@ -61,7 +61,11 @@ async function callApi(endpoint, token, options = {}) {
   }
   if (!token) throw new Error("No auth token");
   try {
-    const res = await api({ url: endpoint, params: { auth: token }, ...options });
+    const res = await api({
+      url: endpoint,
+      params: { auth: token },
+      ...options,
+    });
     return res.data;
   } catch (err) {
     throw new Error(err.response?.data?.error || err.message);
