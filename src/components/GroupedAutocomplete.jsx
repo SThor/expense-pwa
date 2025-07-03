@@ -2,6 +2,8 @@ import PropTypes from "prop-types";
 import { useState, useRef, useEffect } from "react";
 import { MdAddCircle, MdArrowDropDown, MdClear } from "react-icons/md";
 
+import { AUTOCOMPLETE_BLUR_TIMEOUT_MS } from "../constants.js";
+
 function GroupedAutocomplete({
   value,
   onChange,
@@ -107,6 +109,8 @@ function GroupedAutocomplete({
       setOpen(false);
     }
   }
+  // The timeout allows dropdown click events to register before the input loses focus and closes the dropdown.
+  // This prevents race conditions where a click on a dropdown item would be ignored due to blur.
   function handleBlur() {
     setTimeout(() => {
       if (ignoreBlurRef.current) {
@@ -138,7 +142,7 @@ function GroupedAutocomplete({
         // No match and cannot create: set to empty/null
         onChange("", "");
       }
-    }, 120);
+    }, AUTOCOMPLETE_BLUR_TIMEOUT_MS);
   }
 
   // Only track user focus for suppressOpen logic

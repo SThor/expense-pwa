@@ -10,3 +10,6 @@ export const TEST_GROUP_NAME = "test group";
 
 // Firebase token refresh interval (ms)
 export const FIREBASE_TOKEN_REFRESH_INTERVAL = 50 * 60 * 1000; // 50 minutes
+
+// Timeout used in GroupedAutocomplete blur handler to allow dropdown click events to register before closing
+export const AUTOCOMPLETE_BLUR_TIMEOUT_MS = 120;
