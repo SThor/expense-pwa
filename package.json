@@ -57,8 +57,7 @@
     "vite": "^4.0.0",
     "vite-plugin-pwa": "^0.16.0",
     "vitest": "^3.2.4"
-  }
-  ,
+  },
   "description": "A Progressive Web App for shared expenses entry in YNAB & SettleUp",
   "author": "SThor <paulgivel@gmail.com>",
   "repository": {
@@ -69,6 +68,14 @@
   "bugs": {
     "url": "https://github.com/SThor/expense-pwa/issues"
   },
-  "keywords": ["pwa", "expenses", "react", "vite", "firebase", "ynab", "settleup"],
+  "keywords": [
+    "pwa",
+    "expenses",
+    "react",
+    "vite",
+    "firebase",
+    "ynab",
+    "settleup"
+  ],
   "license": "MIT"
 }
