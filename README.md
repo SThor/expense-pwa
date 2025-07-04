@@ -119,6 +119,8 @@ Special handling for Swile meal vouchers with automatic amount calculations and 
 - `npm run preview` - Preview production build locally
 - `npm test` - Run tests
 - `npm run test:coverage` - Run tests with coverage
+- `npm run lint` - Run ESLint
+- `npm run lint:fix` - Fix linting issues automatically
 
 ## Deployment
 
@@ -165,7 +167,15 @@ src/
 ### Specific documentation
 
 - [Version Display System](doc/VERSION_DISPLAY.md) - Automatic git-based version display on all pages
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security Policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
 
-## License
+## License & Third-Party Assets
 
-This project is private for now. All rights reserved.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+Some logo/image assets in this repository (e.g., boursobank, swile, ynab, settleup icons) are not covered by the MIT license. See the [NOTICE](NOTICE) file for details.
+
+This project and its author are **not affiliated with, endorsed by, or sponsored by YNAB, SettleUp, Swile, Boursorama, or any other brand whose logo may appear in this repository**. All trademarks and logos are the property of their respective owners and are used here for identification or integration purposes only.
