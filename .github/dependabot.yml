@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "react"
+        versions: ["18.x"]
+      - dependency-name: "react-dom"
+        versions: ["18.x"]

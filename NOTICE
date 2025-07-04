@@ -1,0 +1,12 @@
+# Asset License Notice
+
+This project is licensed under the MIT License (see [LICENSE](LICENSE) file), **except for certain image assets**. The following files are included for convenience and are NOT covered by the MIT license:
+
+- `public/boursobank-icon.png`
+- `public/swile-icon.png`
+- `public/ynab-icon.png`
+- `public/settleup-icon.png`
+
+These files are trademarks or copyrighted works of their respective owners and are used here for identification or integration purposes only. You may NOT redistribute, modify, or use these images outside the context of this application unless you have obtained permission from the rights holders.
+
+If you are the owner of any of these assets and would like them removed or properly attributed, please open an issue or contact the maintainer.
