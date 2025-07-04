@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Unified border/focus/hover for interactive fields */
+.unified-border {
+  @apply border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 hover:border-sky-400 transition-colors duration-150;
+}
+
 /* Fade-slide animation for section transitions */
 .fade-slide-enter {
   opacity: 0;
