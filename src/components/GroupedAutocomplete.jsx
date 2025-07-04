@@ -182,11 +182,11 @@ function GroupedAutocomplete({
   }, [input]);
 
   return (
-    <div className="relative w-full" style={{ fontFamily: "inherit" }}>
+    <div className="relative w-full font-inherit">
       <div className="relative">
         <input
           ref={inputRef}
-          className="border w-full rounded py-2 px-3 pr-8 text-base shadow-sm focus:ring-2 focus:ring-blue-200 outline-none transition"
+          className="input input-bordered w-full px-3 py-2 pr-8 text-base shadow-sm unified-border"
           value={input}
           onChange={handleInputChange}
           onFocus={() => {
@@ -205,14 +205,7 @@ function GroupedAutocomplete({
         {input && (
           <button
             type="button"
-            className="absolute right-9 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 focus:outline-none"
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              margin: 0,
-              cursor: "pointer",
-            }}
+            className="absolute right-9 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 focus:outline-none bg-transparent border-none p-0 m-0 cursor-pointer"
             tabIndex={-1}
             onClick={() => {
               setInput("");
@@ -232,12 +225,7 @@ function GroupedAutocomplete({
       {open && (
         <div
           ref={dropdownRef}
-          className="absolute z-20 w-full bg-white border rounded shadow-lg mt-1 max-h-72 overflow-auto animate-fade-in"
-          style={{
-            minWidth: "100%",
-            marginTop: 2,
-            transition: "box-shadow 0.2s",
-          }}
+          className="absolute z-20 w-full bg-white border border-gray-300 rounded shadow-lg mt-1 max-h-72 overflow-auto animate-fade-in min-w-full transition-[box-shadow] duration-200"
           onMouseDown={() => {
             ignoreBlurRef.current = true;
           }}
@@ -246,7 +234,7 @@ function GroupedAutocomplete({
             !flatList.some((item) => item.label === input) &&
             typeof onCreate === "function" && (
               <div
-                className="cursor-pointer px-3 py-2 hover:bg-blue-50 text-blue-700 flex items-center"
+                className="cursor-pointer px-3 py-2 hover:bg-blue-50 text-blue-700 flex items-center border-b border-b-gray-100 transition-colors duration-150"
                 onClick={(e) => {
                   e.preventDefault();
                   onCreate(input);
@@ -268,12 +256,12 @@ function GroupedAutocomplete({
               {group.items.map((item, itemIdx) => (
                 <div
                   key={item.value}
-                  className={`px-3 py-2 cursor-pointer transition ${
+                  className={`px-3 py-2 cursor-pointer transition-colors duration-150 rounded ${
                     highlighted.groupIdx === groupIdx &&
                     highlighted.itemIdx === itemIdx
                       ? "bg-blue-100"
                       : "hover:bg-blue-50"
-                  }`}
+                  } mx-1 my-0.5`}
                   onClick={(e) => {
                     e.preventDefault();
                     handleSelect(item);

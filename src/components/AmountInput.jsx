@@ -78,7 +78,7 @@ export default function AmountInput({ value, onChange }) {
         {isNegative ? "-" : "+"}
       </span>
       <input
-        className={`input input-bordered w-full pl-9 pr-7 py-2 border rounded focus:outline-none transition-colors duration-150 ${
+        className={`input input-bordered w-full pl-9 pr-7 py-2 unified-border ${
           isNegative ? "bg-red-50/40" : "bg-green-50/40"
         }`}
         type="text"

@@ -24,10 +24,10 @@ export default function EmojiCategoryButton({ value, onChange }) {
   }, [showEmojiPicker]);
 
   return (
-    <div className="relative" style={{ width: "fit-content" }}>
+    <div className="relative w-fit">
       <button
         type="button"
-        className="flex items-center justify-center border rounded bg-white shadow-sm hover:bg-blue-50 focus:ring-2 focus:ring-blue-200 transition"
+        className="flex items-center justify-center bg-white shadow-sm unified-border"
         onClick={() => setShowEmojiPicker((v) => !v)}
         aria-label="Pick emoji category"
         style={{ width: 50, height: 40, padding: 2 }}

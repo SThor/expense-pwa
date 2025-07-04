@@ -105,6 +105,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
             onCreate={(val) => {
               setFormState((prev) => ({ ...prev, payee: val, payeeId: "" }));
             }}
+            inputClassName="unified-border input input-bordered w-full px-3 py-2"
           />
         </div>
       </div>
@@ -152,6 +153,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
           }}
           groupedItems={groupedCategories}
           placeholder="Category"
+          inputClassName="unified-border input input-bordered w-full px-3 py-2"
         />
       </div>
       <div>
@@ -163,7 +165,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
         </label>
         <input
           id="description-input"
-          className="input input-bordered w-full px-3 py-2 border rounded"
+          className="unified-border input input-bordered w-full px-3 py-2"
           type="text"
           placeholder="Description"
           value={formState.description}
