@@ -121,7 +121,7 @@ export default function ToggleButton({
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       style={buttonStyle}
-      className="focus:outline-none"
+      className="focus:outline-hidden"
     >
       <div style={innerContainerStyle}>
         <div className="flex-1 flex items-center justify-center">

@@ -4,7 +4,7 @@ import { forwardRef } from "react";
 const ReviewSection = forwardRef(function ReviewSection(props, ref) {
   if (!props.amountMilliunits) return null;
   return (
-    <div ref={ref} className="bg-sky-100 rounded p-3 mb-4 text-sm">
+    <div ref={ref} className="bg-sky-100 rounded-sm p-3 mb-4 text-sm">
       <div className="font-semibold mb-1">Review Transaction:</div>
       <div>
         Total:{" "}

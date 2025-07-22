@@ -1,10 +1,28 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@source './src/**/*.{js,jsx}';
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
 /* Unified border/focus/hover for interactive fields */
 .unified-border {
-  @apply border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 hover:border-sky-400 transition-colors duration-150;
+  @apply border border-gray-300 rounded-sm focus:outline-hidden focus:ring-2 focus:ring-sky-400 focus:border-sky-400 hover:border-sky-400 transition-colors duration-150;
 }
 
 /* Fade-slide animation for section transitions */

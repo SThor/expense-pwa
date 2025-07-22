@@ -201,7 +201,7 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
         </div>
       )}
       <button
-        className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded w-full mt-4"
+        className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded-sm w-full mt-4"
         onClick={handleSubmit}
         disabled={loading}
       >
