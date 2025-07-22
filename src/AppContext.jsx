@@ -4,12 +4,35 @@ import { createContext, useContext, useMemo, useState, useEffect } from "react";
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
-  // YNAB
   // Set default budgetId if missing and ynabAPI is available
-  const defaultYnabToken = import.meta.env.VITE_YNAB_TOKEN || "";
   const defaultBudgetId = import.meta.env.VITE_YNAB_BUDGET_ID || "";
-  const [ynabToken, setYnabToken] = useState(defaultYnabToken);
+
+  // Load YNAB token from localStorage
+  const getStoredYnabToken = () => {
+    try {
+      return localStorage.getItem("ynab_api_key") || "";
+    } catch (error) {
+      console.warn("Failed to load YNAB token from localStorage:", error);
+      return "";
+    }
+  };
+
+  const [ynabToken, setYnabTokenState] = useState(getStoredYnabToken);
   const [budgetId, setBudgetId] = useState(defaultBudgetId);
+
+  // Custom setter that also saves to localStorage
+  const setYnabToken = (token) => {
+    try {
+      if (token) {
+        localStorage.setItem("ynab_api_key", token);
+      } else {
+        localStorage.removeItem("ynab_api_key");
+      }
+    } catch (error) {
+      console.warn("Failed to save YNAB token to localStorage:", error);
+    }
+    setYnabTokenState(token);
+  };
   const [accounts, setAccounts] = useState([]);
   const ynabAPI = useMemo(
     () => (ynabToken ? new window.ynab.API(ynabToken) : null),

@@ -10,7 +10,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import { AppProvider } from "./AppContext.jsx";
+import { AppProvider, useAppContext } from "./AppContext.jsx";
 import { AuthProvider, useAuth } from "./AuthProvider.jsx";
 import {
   DEFAULT_SETTLEUP_CATEGORY,
@@ -23,7 +23,10 @@ import "./index.css";
 
 function RequireAuth({ children }) {
   const { user } = useAuth();
-  if (!user) {
+  const { ynabToken } = useAppContext();
+
+  // Require both user authentication AND YNAB token
+  if (!user || !ynabToken) {
     return <Navigate to="/login" replace />;
   }
   return children;
@@ -31,6 +34,7 @@ function RequireAuth({ children }) {
 
 function RouterApp() {
   const { user } = useAuth();
+  const { ynabToken } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
   // Default form state for all shared fields
@@ -55,12 +59,12 @@ function RouterApp() {
   };
   const [formState, setFormState] = useState(DEFAULT_FORM_STATE);
   useEffect(() => {
-    // If logged in and on /login, redirect to /
-    if (user && location.pathname === "/login") {
+    // If logged in with YNAB token and on /login, redirect to /
+    if (user && ynabToken && location.pathname === "/login") {
       console.log("[RouterApp] Auto-redirecting to / after login");
       navigate("/", { replace: true });
     }
-  }, [user, location.pathname]);
+  }, [user, ynabToken, location.pathname, navigate]);
 
   return (
     <Routes>

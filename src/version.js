@@ -2,13 +2,13 @@
 // Do not edit manually
 
 export const VERSION_INFO = {
-  "tag": null,
-  "branch": "feature/22-fix-ynab-connection-again",
-  "commit": "b0ff3d8",
+  "tag": "1.0.0",
+  "branch": "main",
+  "commit": "3150271",
   "isDirty": true,
-  "buildTime": "2025-07-03T18:50:24.827Z",
-  "version": "feature/22-fix-ynab-connection-again-b0ff3d8-dirty",
-  "shortVersion": "b0ff3d8"
+  "buildTime": "2025-07-22T13:03:47.168Z",
+  "version": "1.0.0",
+  "shortVersion": "1.0.0"
 };
 
 export const getVersionString = () => {

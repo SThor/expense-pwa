@@ -31,7 +31,6 @@ jobs:
       - name: Set environment variables
         run: |
           # Set VITE variables for build from secrets
-          echo "VITE_YNAB_TOKEN=${{ secrets.VITE_YNAB_TOKEN }}" >> $GITHUB_ENV
           echo "VITE_YNAB_BUDGET_ID=${{ secrets.VITE_YNAB_BUDGET_ID }}" >> $GITHUB_ENV
           echo "VITE_SETTLEUP_DUMMY=${{ secrets.VITE_SETTLEUP_DUMMY }}" >> $GITHUB_ENV
           echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" >> $GITHUB_ENV
