@@ -27,7 +27,7 @@ export default function EmojiCategoryButton({ value, onChange }) {
     <div className="relative w-fit">
       <button
         type="button"
-        className="flex items-center justify-center bg-white shadow-sm unified-border"
+        className="flex items-center justify-center bg-white shadow-xs unified-border"
         onClick={() => setShowEmojiPicker((v) => !v)}
         aria-label="Pick emoji category"
         style={{ width: 50, height: 40, padding: 2 }}
@@ -48,7 +48,7 @@ export default function EmojiCategoryButton({ value, onChange }) {
       {showEmojiPicker && (
         <div
           ref={emojiPickerRef}
-          className="absolute z-30 bg-white border rounded shadow-lg mt-1 animate-fade-in"
+          className="absolute z-30 bg-white border rounded-sm shadow-lg mt-1 animate-fade-in"
           style={{ minWidth: 180, maxWidth: 220 }}
         >
           <Picker

@@ -3,10 +3,10 @@
 
 export const VERSION_INFO = {
   "tag": "1.0.0",
-  "branch": "SThor/issue42",
-  "commit": "64aefc7",
+  "branch": "dependabot/npm_and_yarn/tailwindcss-4.1.11",
+  "commit": "b82e786",
   "isDirty": true,
-  "buildTime": "2025-07-22T20:24:01.728Z",
+  "buildTime": "2025-07-22T20:46:01.147Z",
   "version": "1.0.0",
   "shortVersion": "1.0.0"
 };

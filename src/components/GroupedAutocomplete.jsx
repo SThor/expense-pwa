@@ -186,7 +186,7 @@ function GroupedAutocomplete({
       <div className="relative">
         <input
           ref={inputRef}
-          className="input input-bordered w-full px-3 py-2 pr-8 text-base shadow-sm unified-border"
+          className="input input-bordered w-full px-3 py-2 pr-8 text-base shadow-xs unified-border"
           value={input}
           onChange={handleInputChange}
           onFocus={() => {
@@ -205,7 +205,7 @@ function GroupedAutocomplete({
         {input && (
           <button
             type="button"
-            className="absolute right-9 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 focus:outline-none bg-transparent border-none p-0 m-0 cursor-pointer"
+            className="absolute right-9 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 focus:outline-hidden bg-transparent border-none p-0 m-0 cursor-pointer"
             tabIndex={-1}
             onClick={() => {
               setInput("");
@@ -225,7 +225,7 @@ function GroupedAutocomplete({
       {open && (
         <div
           ref={dropdownRef}
-          className="absolute z-20 w-full bg-white border border-gray-300 rounded shadow-lg mt-1 max-h-72 overflow-auto animate-fade-in min-w-full transition-[box-shadow] duration-200"
+          className="absolute z-20 w-full bg-white border border-gray-300 rounded-sm shadow-lg mt-1 max-h-72 overflow-auto animate-fade-in min-w-full transition-shadow duration-200"
           onMouseDown={() => {
             ignoreBlurRef.current = true;
           }}

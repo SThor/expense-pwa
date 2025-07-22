@@ -73,7 +73,7 @@ export default function LoginPage() {
       {error && (
         <div
           role="alert"
-          className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded"
+          className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-sm"
         >
           {error}
         </div>
@@ -97,7 +97,7 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-sm hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaGoogle className="text-red-500" />
             <span className="text-gray-700 font-medium">
@@ -129,7 +129,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                 placeholder="Enter your email"
               />
             </div>
@@ -150,7 +150,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                 placeholder="Enter your password"
               />
             </div>
@@ -159,7 +159,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-sky-600 text-white py-2 px-4 rounded-lg hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-sky-600 text-white py-2 px-4 rounded-sm hover:bg-sky-700 focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </button>
@@ -204,7 +204,7 @@ export default function LoginPage() {
                 value={ynabToken}
                 onChange={(e) => setYnabToken(e.target.value)}
                 required
-                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                 placeholder="Enter your YNAB API key"
               />
               <button
