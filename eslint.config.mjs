@@ -12,6 +12,14 @@ export default [
   pluginReact.configs.flat["jsx-runtime"],
   eslintImport.flatConfigs.recommended,
   {
+    ignores: [
+      "dist/**",
+      "dev-dist/**", 
+      "coverage/**",
+      "node_modules/**",
+    ],
+  },
+  {
     files: ["**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}"],
     languageOptions: {
       ecmaVersion: "latest",
