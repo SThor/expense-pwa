@@ -3,7 +3,6 @@ import { useRef, cloneElement } from "react";
 
 const COLOR_TOGGLE_DEFAULT = "#23285A";
 const COLOR_TOGGLE_INACTIVE = "#9ca3af";
-const COLOR_TOGGLE_LABEL_INACTIVE = "#4b5563"; // Tailwind gray-700
 
 function makeConicGradient(colors) {
   if (!colors || colors.length === 0) return undefined;
@@ -43,10 +42,6 @@ export default function ToggleButton({
       style: { opacity: active ? 1 : 0.7 },
     });
   }
-
-  const labelStyle = active
-    ? { color }
-    : { color: COLOR_TOGGLE_LABEL_INACTIVE };
 
   const buttonStyle = {
     width: size,
@@ -124,17 +119,8 @@ export default function ToggleButton({
       className="focus:outline-hidden"
     >
       <div style={innerContainerStyle}>
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-center justify-center h-full">
           {iconElement}
-        </div>
-        <div
-          className="mt-1 text-xs font-semibold"
-          style={{
-            ...labelStyle,
-            textAlign: "center",
-          }}
-        >
-          {label}
         </div>
       </div>
     </button>
