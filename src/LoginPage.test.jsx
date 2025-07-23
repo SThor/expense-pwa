@@ -150,12 +150,21 @@ describe("LoginPage Authentication Requirements", () => {
       expect(screen.getByText("YNAB Integration")).toBeInTheDocument();
     });
 
-    test("does not render when user is authenticated and has YNAB token", () => {
+    test("renders and navigates to home when user is authenticated and has YNAB token", async () => {
       localStorage.setItem("ynab_api_key", "test-token");
       mockAuth.user = { uid: "test-user" };
 
-      const { container } = renderWithProviders(<LoginPage />);
-      expect(container.firstChild).toBeNull();
+      renderWithProviders(<LoginPage />);
+
+      // Should render the login page initially
+      expect(
+        screen.getByRole("heading", { name: "Sign In" }),
+      ).toBeInTheDocument();
+
+      // But should navigate to home
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
+      });
     });
 
     test("renders when user is authenticated but missing YNAB token", () => {
