@@ -12,6 +12,7 @@ import {
 
 import { AppProvider, useAppContext } from "./AppContext.jsx";
 import { AuthProvider, useAuth } from "./AuthProvider.jsx";
+import LoadingScreen from "./components/LoadingScreen.jsx";
 import {
   DEFAULT_SETTLEUP_CATEGORY,
   DEFAULT_SWILE_MILLIUNITS,
@@ -22,8 +23,13 @@ import NotFoundPage from "./NotFoundPage.jsx";
 import "./index.css";
 
 function RequireAuth({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { ynabToken } = useAppContext();
+
+  // Show loading while authentication is being checked
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   // Require both user authentication AND YNAB token
   if (!user || !ynabToken) {
@@ -33,7 +39,7 @@ function RequireAuth({ children }) {
 }
 
 function RouterApp() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { ynabToken } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
@@ -58,17 +64,19 @@ function RouterApp() {
     showDetails: false,
   };
   const [formState, setFormState] = useState(DEFAULT_FORM_STATE);
+
   useEffect(() => {
     // If logged in with YNAB token and on /login, redirect to /
-    if (user && ynabToken && location.pathname === "/login") {
+    if (!loading && user && ynabToken && location.pathname === "/login") {
       console.log("[RouterApp] Auto-redirecting to / after login");
       navigate("/", { replace: true });
     }
-  }, [user, ynabToken, location.pathname, navigate]);
+  }, [user, ynabToken, location.pathname, navigate, loading]);
 
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/spinner" element={<LoadingScreen />} />
       <Route
         path="/"
         element={

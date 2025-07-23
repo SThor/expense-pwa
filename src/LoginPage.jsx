@@ -34,9 +34,6 @@ export default function LoginPage() {
     }
   }, [user, ynabToken, navigate]);
 
-  // Prevent rendering if user is authenticated (prevents flicker)
-  if (user && ynabToken) return null;
-
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError("");
