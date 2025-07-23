@@ -13,3 +13,6 @@ export const FIREBASE_TOKEN_REFRESH_INTERVAL = 50 * 60 * 1000; // 50 minutes
 
 // Timeout used in GroupedAutocomplete blur handler to allow dropdown click events to register before closing
 export const AUTOCOMPLETE_BLUR_TIMEOUT_MS = 120;
+
+// Bourso transfer payee ID (used for Bourso completion transactions)
+export const BOURSO_TRANSFER_PAYEE_ID = "eabe1e60-fa92-40f7-8636-5c8bcbf1404a";

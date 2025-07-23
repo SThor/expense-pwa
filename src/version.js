@@ -3,10 +3,10 @@
 
 export const VERSION_INFO = {
   "tag": "1.0.0",
-  "branch": "SThor/issue35",
-  "commit": "da7c4a6",
+  "branch": "38-swile-amount-needs-to-be-capped-at-the-transaction-amount",
+  "commit": "48c0900",
   "isDirty": true,
-  "buildTime": "2025-07-23T10:51:28.071Z",
+  "buildTime": "2025-07-23T12:30:33.159Z",
   "version": "1.0.0",
   "shortVersion": "1.0.0"
 };

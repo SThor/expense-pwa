@@ -6,21 +6,28 @@ import { useState, useEffect } from "react";
  * Props:
  *   value: number (milliunits, negative for expense)
  *   onChange: function (milliunits: number) => void
+ *   max: number (optional, maximum value in milliunits)
+ *   min: number (optional, minimum value in milliunits)
  */
-export default function AmountInput({ value, onChange }) {
+export default function AmountInput({ value, onChange, max, min }) {
   // Internal state: string for display
   const [display, setDisplay] = useState("");
   // Remove local isNegative state, always derive from value
   const isNegative = value <= 0;
 
   // Convert milliunits to display string
-  useEffect(() => {
-    const absMilli = Math.abs(value);
+  function milliUnitsToDisplay(milliunits) {
+    const absMilli = Math.abs(milliunits);
     const euros = (absMilli / 1000).toLocaleString("fr-FR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-    setDisplay(euros === "0,00" ? "" : euros);
+    return euros === "0,00" ? "" : euros;
+  }
+
+  // Convert milliunits to display string
+  useEffect(() => {
+    setDisplay(milliUnitsToDisplay(value));
   }, [value]);
 
   // Format input as YNAB-style cents (last 2 digits = cents)
@@ -43,24 +50,44 @@ export default function AmountInput({ value, onChange }) {
     return negative ? -milli : milli;
   }
 
+  // Apply constraints and update the value
+  function applyConstraintsAndUpdate(newValue) {
+    // Apply max constraint if provided
+    if (max !== undefined && newValue > max) {
+      newValue = max;
+    }
+
+    // Apply min constraint if provided
+    if (min !== undefined && newValue < min) {
+      newValue = min;
+    }
+
+    // Update display to reflect the final value (after constraints)
+    setDisplay(milliUnitsToDisplay(newValue));
+
+    onChange(newValue);
+  }
+
   function handleChange(e) {
     const raw = e.target.value;
     const formatted = formatAmountInput(raw);
-    setDisplay(formatted);
-    onChange(displayToMilliunits(formatted, isNegative));
+
+    const newValue = displayToMilliunits(formatted, isNegative);
+    applyConstraintsAndUpdate(newValue);
   }
 
   function handlePaste(e) {
     e.preventDefault();
     const pasted = e.clipboardData.getData("Text");
     const formatted = formatAmountInput(pasted);
-    setDisplay(formatted);
-    onChange(displayToMilliunits(formatted, isNegative));
+
+    const newValue = displayToMilliunits(formatted, isNegative);
+    applyConstraintsAndUpdate(newValue);
   }
 
   function handleSignToggle() {
-    // Flip sign by negating value
-    onChange(-value);
+    const newValue = -value;
+    applyConstraintsAndUpdate(newValue);
   }
 
   return (
@@ -100,4 +127,6 @@ export default function AmountInput({ value, onChange }) {
 AmountInput.propTypes = {
   value: PropTypes.number.isRequired,
   onChange: PropTypes.func.isRequired,
+  max: PropTypes.number,
+  min: PropTypes.number,
 };

@@ -374,7 +374,7 @@ export default function App({ onSubmit, formState, setFormState }) {
           setSwileMilliunits={(val) =>
             setFormState((prev) => ({ ...prev, swileMilliunits: val }))
           }
-          max={formState.amountMilliunits}
+          min={formState.amountMilliunits}
         />
       </Collapsible>
 
