@@ -4,9 +4,9 @@
 export const VERSION_INFO = {
   "tag": "1.0.0",
   "branch": "38-swile-amount-needs-to-be-capped-at-the-transaction-amount",
-  "commit": "48c0900",
+  "commit": "d379458",
   "isDirty": true,
-  "buildTime": "2025-07-23T12:30:33.159Z",
+  "buildTime": "2025-07-23T13:08:47.234Z",
   "version": "1.0.0",
   "shortVersion": "1.0.0"
 };
