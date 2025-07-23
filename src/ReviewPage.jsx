@@ -10,6 +10,7 @@ import { useAppContext } from "./AppContext.jsx";
 import { useAuth } from "./AuthProvider.jsx";
 import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
 import ReviewSection from "./components/ReviewSection.jsx";
+import { BOURSO_TRANSFER_PAYEE_ID } from "./constants.js";
 import { formStatePropType } from "./propTypes.js";
 import { getAccountIdByName } from "./utils/ynabUtils";
 
@@ -20,31 +21,64 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
   const { ynabAPI, budgetId, accounts } = useAppContext();
   const { token, user } = useAuth();
 
+  // Helper function to create base transaction object
+  function createBaseTransaction(accountId, amount) {
+    return {
+      account_id: accountId,
+      date: new Date().toISOString().slice(0, 10),
+      amount: amount,
+      payee_id: formState.payeeId || null,
+      payee_name: !formState.payeeId ? formState.payee : undefined,
+      category_id: formState.categoryId,
+      memo: formState.description,
+      approved: true,
+    };
+  }
+
+  // Helper function to execute YNAB API call
+  async function executeYnabTransaction(transaction, successMessage) {
+    try {
+      setLoading(true);
+      const res = await ynabAPI.transactions.createTransaction(budgetId, {
+        transaction,
+      });
+      setResult(successMessage + "\n" + JSON.stringify(res, null, 2));
+    } catch (err) {
+      setResult("YNAB API error: " + (err?.message || err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleYnabSubmit() {
     if (!ynabAPI || !budgetId) {
       setResult("YNAB not configured.");
       return;
     }
+
     // Split transaction logic
     if (formState.account.swile && formState.account.bourso) {
       const swileAccountId = getAccountIdByName(accounts, "Swile");
       const boursoAccountId = getAccountIdByName(accounts, "Boursorama");
+      
       if (!swileAccountId || !boursoAccountId) {
         setResult("No matching YNAB account found for Swile or Bourso.");
         return;
       }
-      const transferInflowMilliunits =
-        formState.swileMilliunits - formState.amountMilliunits;
-      const boursoTransferPayeeId = "eabe1e60-fa92-40f7-8636-5c8bcbf1404a";
+
+      const transferInflowMilliunits = formState.swileMilliunits - formState.amountMilliunits;
+
+      // If Swile covers the full amount, create a simple transaction
+      if (transferInflowMilliunits === 0) {
+        const transaction = createBaseTransaction(swileAccountId, formState.amountMilliunits);
+        await executeYnabTransaction(transaction, "✅ YNAB transaction sent!");
+        return;
+      }
+
+      // Create split transaction
       const transaction = {
-        account_id: swileAccountId,
-        date: new Date().toISOString().slice(0, 10),
-        amount: formState.swileMilliunits,
-        payee_id: formState.payeeId || null,
-        payee_name: !formState.payeeId ? formState.payee : undefined,
-        category_id: null,
-        memo: formState.description,
-        approved: true,
+        ...createBaseTransaction(swileAccountId, formState.swileMilliunits),
+        category_id: null, // Override for split transactions
         subtransactions: [
           {
             amount: formState.amountMilliunits,
@@ -54,55 +88,31 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
           },
           {
             amount: transferInflowMilliunits,
-            payee_id: boursoTransferPayeeId,
+            payee_id: BOURSO_TRANSFER_PAYEE_ID,
             transfer_account_id: boursoAccountId,
             memo: "Bourso completion",
           },
         ],
       };
-      try {
-        setLoading(true);
-        await ynabAPI.transactions.createTransaction(budgetId, { transaction });
-        setResult("✅ YNAB split transaction sent!");
-      } catch (err) {
-        setResult("YNAB API error: " + (err?.message || err));
-      } finally {
-        setLoading(false);
-      }
+      
+      await executeYnabTransaction(transaction, "✅ YNAB split transaction sent!");
       return;
     }
+
     // Single-account transaction
-    let accountId = null;
-    if (formState.account.bourso)
-      accountId = getAccountIdByName(accounts, "Boursorama");
-    else if (formState.account.swile)
-      accountId = getAccountIdByName(accounts, "Swile");
-    else accountId = getAccountIdByName(accounts, "Boursorama");
+    const accountId = formState.account.bourso 
+      ? getAccountIdByName(accounts, "Boursorama")
+      : formState.account.swile 
+        ? getAccountIdByName(accounts, "Swile")
+        : getAccountIdByName(accounts, "Boursorama"); // Default fallback
+
     if (!accountId) {
       setResult("No matching YNAB account found for the selected button.");
       return;
     }
-    const transaction = {
-      account_id: accountId,
-      date: new Date().toISOString().slice(0, 10),
-      amount: formState.amountMilliunits,
-      payee_id: formState.payeeId || null,
-      payee_name: !formState.payeeId ? formState.payee : undefined,
-      category_id: formState.categoryId,
-      memo: formState.description,
-      approved: true,
-    };
-    try {
-      setLoading(true);
-      const res = await ynabAPI.transactions.createTransaction(budgetId, {
-        transaction,
-      });
-      setResult("✅ YNAB transaction sent!\n" + JSON.stringify(res, null, 2));
-    } catch (err) {
-      setResult("YNAB API error: " + (err?.message || err));
-    } finally {
-      setLoading(false);
-    }
+
+    const transaction = createBaseTransaction(accountId, formState.amountMilliunits);
+    await executeYnabTransaction(transaction, "✅ YNAB transaction sent!");
   }
 
   async function handleSettleUpSubmit() {
