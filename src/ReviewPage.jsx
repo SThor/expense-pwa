@@ -60,17 +60,21 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
     if (formState.account.swile && formState.account.bourso) {
       const swileAccountId = getAccountIdByName(accounts, "Swile");
       const boursoAccountId = getAccountIdByName(accounts, "Boursorama");
-      
+
       if (!swileAccountId || !boursoAccountId) {
         setResult("No matching YNAB account found for Swile or Bourso.");
         return;
       }
 
-      const transferInflowMilliunits = formState.swileMilliunits - formState.amountMilliunits;
+      const transferInflowMilliunits =
+        formState.swileMilliunits - formState.amountMilliunits;
 
       // If Swile covers the full amount, create a simple transaction
       if (transferInflowMilliunits === 0) {
-        const transaction = createBaseTransaction(swileAccountId, formState.amountMilliunits);
+        const transaction = createBaseTransaction(
+          swileAccountId,
+          formState.amountMilliunits,
+        );
         await executeYnabTransaction(transaction, "✅ YNAB transaction sent!");
         return;
       }
@@ -94,15 +98,18 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
           },
         ],
       };
-      
-      await executeYnabTransaction(transaction, "✅ YNAB split transaction sent!");
+
+      await executeYnabTransaction(
+        transaction,
+        "✅ YNAB split transaction sent!",
+      );
       return;
     }
 
     // Single-account transaction
-    const accountId = formState.account.bourso 
+    const accountId = formState.account.bourso
       ? getAccountIdByName(accounts, "Boursorama")
-      : formState.account.swile 
+      : formState.account.swile
         ? getAccountIdByName(accounts, "Swile")
         : getAccountIdByName(accounts, "Boursorama"); // Default fallback
 
@@ -111,7 +118,10 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
       return;
     }
 
-    const transaction = createBaseTransaction(accountId, formState.amountMilliunits);
+    const transaction = createBaseTransaction(
+      accountId,
+      formState.amountMilliunits,
+    );
     await executeYnabTransaction(transaction, "✅ YNAB transaction sent!");
   }
 
