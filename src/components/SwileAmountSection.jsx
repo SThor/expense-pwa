@@ -4,7 +4,7 @@ import { forwardRef } from "react";
 import AmountInput from "./AmountInput.jsx";
 
 const SwileAmountSection = forwardRef(function SwileAmountSection(
-  { swileMilliunits, setSwileMilliunits, max },
+  { swileMilliunits, setSwileMilliunits, min },
   ref,
 ) {
   return (
@@ -16,8 +16,8 @@ const SwileAmountSection = forwardRef(function SwileAmountSection(
         label="Amount paid by Swile"
         value={swileMilliunits}
         onChange={setSwileMilliunits}
-        min={0}
-        max={max}
+        min={min || undefined}
+        max={0}
       />
     </div>
   );
@@ -28,5 +28,5 @@ export default SwileAmountSection;
 SwileAmountSection.propTypes = {
   swileMilliunits: PropTypes.number.isRequired,
   setSwileMilliunits: PropTypes.func.isRequired,
-  max: PropTypes.number,
+  min: PropTypes.number,
 };
