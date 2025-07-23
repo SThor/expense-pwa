@@ -3,10 +3,10 @@
 
 export const VERSION_INFO = {
   "tag": "1.0.0",
-  "branch": "SThor/issue37",
-  "commit": "a105810",
+  "branch": "SThor/issue35",
+  "commit": "da7c4a6",
   "isDirty": true,
-  "buildTime": "2025-07-23T09:14:07.540Z",
+  "buildTime": "2025-07-23T10:51:28.071Z",
   "version": "1.0.0",
   "shortVersion": "1.0.0"
 };
