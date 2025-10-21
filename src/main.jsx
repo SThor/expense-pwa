@@ -43,7 +43,7 @@ function RouterApp() {
   const { ynabToken } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
-  // Default form state for all shared fields
+  // Base defaults (date is injected at init/reset)
   const DEFAULT_FORM_STATE = {
     amountMilliunits: 0,
     description: "",
@@ -63,7 +63,11 @@ function RouterApp() {
     showAccounts: false,
     showDetails: false,
   };
-  const [formState, setFormState] = useState(DEFAULT_FORM_STATE);
+  // Initialize with today's date
+  const [formState, setFormState] = useState(() => ({
+    ...DEFAULT_FORM_STATE,
+    date: new Date(),
+  }));
 
   useEffect(() => {
     // If logged in with YNAB token and on /login, redirect to /
@@ -91,7 +95,7 @@ function RouterApp() {
                 }));
               }}
               resetFormState={() => {
-                setFormState(DEFAULT_FORM_STATE);
+                setFormState({ ...DEFAULT_FORM_STATE, date: new Date() });
               }}
             />
           </RequireAuth>

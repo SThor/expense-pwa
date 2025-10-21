@@ -2,13 +2,13 @@
 // Do not edit manually
 
 export const VERSION_INFO = {
-  "tag": "1.0.0",
-  "branch": "38-swile-amount-needs-to-be-capped-at-the-transaction-amount",
-  "commit": "d379458",
+  "tag": "1.1.0",
+  "branch": "75-add-a-date-field-for-transactions",
+  "commit": "e6f6ba4",
   "isDirty": true,
-  "buildTime": "2025-07-23T13:08:47.234Z",
-  "version": "1.0.0",
-  "shortVersion": "1.0.0"
+  "buildTime": "2025-10-21T22:24:42.530Z",
+  "version": "1.1.0",
+  "shortVersion": "1.1.0"
 };
 
 export const getVersionString = () => {

@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 export const formStatePropType = PropTypes.shape({
   payee: PropTypes.string,
   payeeId: PropTypes.string,
+  date: PropTypes.instanceOf(Date),
   settleUpCategory: PropTypes.string,
   account: PropTypes.shape({
     swile: PropTypes.bool,

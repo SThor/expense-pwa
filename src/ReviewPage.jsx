@@ -23,9 +23,15 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
 
   // Helper function to create base transaction object
   function createBaseTransaction(accountId, amount) {
+    const formatYYYYMMDDLocal = (date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    };
     return {
       account_id: accountId,
-      date: new Date().toISOString().slice(0, 10),
+      date: formatYYYYMMDDLocal(formState.date),
       amount: amount,
       payee_id: formState.payeeId || null,
       payee_name: !formState.payeeId ? formState.payee : undefined,
@@ -148,14 +154,13 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
       return;
     }
     const amount = (-formState.amountMilliunits / 1000).toFixed(2);
-    const now = Date.now();
     const tx = {
       category:
         formState.settleUpCategory === "∅"
           ? undefined
           : formState.settleUpCategory,
       currencyCode: formState.settleUpCurrency || "EUR",
-      dateTime: now,
+      dateTime: formState.date.getTime(),
       items: [
         {
           amount: amount,
