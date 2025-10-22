@@ -4,9 +4,9 @@
 export const VERSION_INFO = {
   "tag": "1.1.0",
   "branch": "75-add-a-date-field-for-transactions",
-  "commit": "e6f6ba4",
+  "commit": "64d4222",
   "isDirty": true,
-  "buildTime": "2025-10-21T22:24:42.530Z",
+  "buildTime": "2025-10-22T20:08:12.902Z",
   "version": "1.1.0",
   "shortVersion": "1.1.0"
 };

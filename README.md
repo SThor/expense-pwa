@@ -12,6 +12,7 @@ A Progressive Web App for quickly adding expenses to both [YNAB (You Need A Budg
 - 🎯 **Smart Categories** - Suggests categories based on your transaction history
 - 📍 **Location-aware** - Automatically suggests payees based on your location
 - 💳 **Swile Support** - Special handling for Swile meal voucher amounts
+- 📅 **Date Selection** - Pick the transaction date (defaults to today)
 - 🔄 **Real-time Sync** - Instant synchronization with both platforms
 - 🎨 **Modern UI** - Clean, responsive design with smooth animations
 
@@ -91,6 +92,7 @@ The app uses SettleUp's sandbox environment by default for testing. For producti
 2. **Account Selection**: Choose which YNAB accounts to use
 3. **Swile Integration**: If you have Swile meal vouchers, toggle the Swile section
 4. **Details**:
+   - Choose the transaction date (defaults to today)
    - Select a payee (auto-suggested based on location)
    - Choose a category (smart suggestions based on history)
    - Add a memo if needed
