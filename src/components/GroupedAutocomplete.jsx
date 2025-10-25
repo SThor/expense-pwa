@@ -10,7 +10,7 @@ function GroupedAutocomplete({
   groupedItems,
   placeholder = "",
   onCreate,
-  placement = "bottom", // "bottom" | "top"
+  placement = "bottom", // "bottom" | "top" | "auto"
 }) {
   const [input, setInput] = useState(value || "");
   const [open, setOpen] = useState(false);
@@ -21,6 +21,7 @@ function GroupedAutocomplete({
   const userFocusRef = useRef(false);
   const userInputRef = useRef(false);
   const justClearedRef = useRef(false);
+  const [openUp, setOpenUp] = useState(placement === "top");
 
   useEffect(() => {
     setInput(value || "");
@@ -42,6 +43,46 @@ function GroupedAutocomplete({
     }
     return () => window.removeEventListener("mousedown", handleClick);
   }, [open]);
+
+  // Auto placement calculation (when placement === "auto")
+  useEffect(() => {
+    if (!open) return;
+
+    const desiredHeightPx = 288; // ~max-h-72 (18rem)
+
+    const measure = () => {
+      if (!inputRef.current) return;
+      const rect = inputRef.current.getBoundingClientRect();
+      const vv = window.visualViewport;
+      const viewportTop = vv ? vv.offsetTop : 0;
+      const viewportHeight = vv ? vv.height : window.innerHeight;
+      const viewportBottom = viewportTop + viewportHeight;
+
+      const spaceBelow = viewportBottom - rect.bottom;
+      const spaceAbove = rect.top - viewportTop;
+
+      let shouldOpenUp = false;
+      if (placement === "top") shouldOpenUp = true;
+      else if (placement === "bottom") shouldOpenUp = false;
+      else {
+        // auto
+        if (spaceBelow >= desiredHeightPx) shouldOpenUp = false;
+        else if (spaceAbove >= desiredHeightPx) shouldOpenUp = true;
+        else shouldOpenUp = spaceAbove > spaceBelow; // pick the larger side
+      }
+      setOpenUp(shouldOpenUp);
+    };
+
+    // Measure now and on viewport changes
+    measure();
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", measure);
+    window.addEventListener("resize", measure);
+    return () => {
+      vv?.removeEventListener("resize", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, [open, placement, input]);
 
   // Filter and flatten for navigation/highlighting
   const filteredGroups = groupedItems
@@ -227,10 +268,9 @@ function GroupedAutocomplete({
         <div
           ref={dropdownRef}
           className={`absolute left-0 z-20 w-full bg-white border border-gray-300 rounded-sm shadow-lg max-h-72 overflow-auto min-w-full transition-shadow duration-200 ${
-            placement === "top"
-              ? "bottom-full mb-1 animate-fade-in-up"
-              : "top-full mt-1 animate-fade-in-down"
+            openUp ? "bottom-full mb-1 animate-fade-in-up" : "top-full mt-1 animate-fade-in-down"
           }`}
+          style={{ maxHeight: "min(18rem, 50dvh)", overscrollBehavior: "contain" }}
           onMouseDown={() => {
             ignoreBlurRef.current = true;
           }}
@@ -317,7 +357,7 @@ GroupedAutocomplete.propTypes = {
   ).isRequired,
   placeholder: PropTypes.string,
   onCreate: PropTypes.func, // (input: string) => void, optional. If provided, allows creating new items when no match is found.
-  placement: PropTypes.oneOf(["bottom", "top"]),
+  placement: PropTypes.oneOf(["bottom", "top", "auto"]),
 };
 
 export default GroupedAutocomplete;

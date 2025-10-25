@@ -133,7 +133,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
               setFormState((prev) => ({ ...prev, payee: val, payeeId: "" }));
             }}
             inputClassName="unified-border input input-bordered w-full px-3 py-2"
-            placement="top"
+            placement="auto"
           />
         </div>
       </div>
@@ -182,7 +182,7 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
           groupedItems={groupedCategories}
           placeholder="Category"
           inputClassName="unified-border input input-bordered w-full px-3 py-2"
-          placement="top"
+          placement="auto"
         />
       </div>
       <div>
