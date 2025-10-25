@@ -12,6 +12,7 @@ import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
 import ReviewSection from "./components/ReviewSection.jsx";
 import { BOURSO_TRANSFER_PAYEE_ID } from "./constants.js";
 import { formStatePropType } from "./propTypes.js";
+import { formatYYYYMMDDLocal } from "./utils/dateUtils";
 import { getAccountIdByName } from "./utils/ynabUtils";
 
 export default function ReviewPage({ formState, onBack, onSubmitted }) {
@@ -23,12 +24,6 @@ export default function ReviewPage({ formState, onBack, onSubmitted }) {
 
   // Helper function to create base transaction object
   function createBaseTransaction(accountId, amount) {
-    const formatYYYYMMDDLocal = (date) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
-    };
     return {
       account_id: accountId,
       date: formatYYYYMMDDLocal(formState.date),
