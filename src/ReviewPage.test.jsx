@@ -2,6 +2,13 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import {
+  addSettleUpTransaction,
+  fetchSettleUpPermissions,
+} from "./api/settleup";
+import { BOURSO_TRANSFER_PAYEE_ID } from "./constants.js";
+import ReviewPage from "./ReviewPage.jsx";
+
 // Mock modules first
 const mockCreateTransaction = vi.fn();
 
@@ -32,15 +39,13 @@ vi.mock("./api/settleup", () => ({
   fetchSettleUpPermissions: vi.fn(),
 }));
 
-import { BOURSO_TRANSFER_PAYEE_ID } from "./constants.js";
-import ReviewPage from "./ReviewPage.jsx";
-
 // Mock props
 const defaultProps = {
   formState: {
     account: { swile: true, bourso: true },
     amountMilliunits: -50000, // -50.00 €
     swileMilliunits: -50000, // Swile covers full amount
+    date: new Date("2025-01-01T12:00:00"),
     payeeId: "test-payee-id",
     payee: "Test Payee",
     categoryId: "test-category-id",
@@ -140,5 +145,61 @@ describe("ReviewPage - Bourso split logic", () => {
         },
       });
     });
+  });
+
+  it("creates SettleUp transaction using selected date at local midday (12:00)", async () => {
+    // Allow SettleUp permissions and return success on add
+    fetchSettleUpPermissions.mockResolvedValue({
+      "test-user-id": { level: 30 },
+    });
+    addSettleUpTransaction.mockResolvedValue({ name: "test-settleup-tx" });
+
+    const selectedDate = new Date("2025-02-03T12:00:00");
+    const settleupProps = {
+      ...defaultProps,
+      formState: {
+        ...defaultProps.formState,
+        target: { ynab: false, settleup: true },
+        date: selectedDate,
+        settleUpGroup: { groupId: "g1" },
+        settleUpMembers: [{ id: "m1", active: true }],
+        settleUpPayerId: "m1",
+        settleUpCurrency: "EUR",
+        payee: "Cafe de Paris",
+        description: "Lunch",
+      },
+    };
+
+    renderWithRouter(<ReviewPage {...settleupProps} />);
+    const submitButton = screen.getByRole("button", {
+      name: /confirm & submit/i,
+    });
+    // Submit and validate epoch ms built from selected date at local midday (12:00)
+    const expectedDateTime = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate(),
+      12,
+      0,
+      0,
+      0,
+    ).getTime();
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(addSettleUpTransaction).toHaveBeenCalled();
+    });
+
+    const call = addSettleUpTransaction.mock.calls[0];
+    expect(call[1]).toBe("g1");
+    const tx = call[2];
+    expect(tx).toMatchObject({
+      currencyCode: "EUR",
+      purpose: expect.stringContaining("Cafe de Paris"),
+      type: "expense",
+    });
+    const actualMs = Number(tx.dateTime);
+    expect(Number.isFinite(actualMs)).toBe(true);
+    expect(actualMs).toBe(expectedDateTime);
   });
 });

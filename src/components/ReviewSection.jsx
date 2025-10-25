@@ -7,6 +7,14 @@ const ReviewSection = forwardRef(function ReviewSection(props, ref) {
     <div ref={ref} className="bg-sky-100 rounded-sm p-3 mb-4 text-sm">
       <div className="font-semibold mb-1">Review Transaction:</div>
       <div>
+        Date:{" "}
+        <span className="font-mono">
+          {props.date instanceof Date
+            ? props.date.toISOString().slice(0, 10)
+            : "-"}
+        </span>
+      </div>
+      <div>
         Total:{" "}
         <span className="font-mono">
           {(props.amountMilliunits / -1000).toFixed(2)} €
@@ -62,6 +70,7 @@ const ReviewSection = forwardRef(function ReviewSection(props, ref) {
 ReviewSection.propTypes = {
   amountMilliunits: PropTypes.number.isRequired,
   swileMilliunits: PropTypes.number,
+  date: PropTypes.instanceOf(Date),
   payee: PropTypes.string,
   category: PropTypes.string,
   description: PropTypes.string,

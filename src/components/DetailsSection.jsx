@@ -71,6 +71,33 @@ const DetailsSection = forwardRef(function DetailsSection(props, ref) {
     <div ref={ref}>
       <div>
         <label
+          htmlFor="date-input"
+          className="block text-sm font-medium text-sky-700 mb-1"
+        >
+          Date
+        </label>
+        <input
+          id="date-input"
+          type="date"
+          className="unified-border input input-bordered w-full px-3 py-2"
+          value={(() => {
+            const d = formState.date instanceof Date ? formState.date : null;
+            return d ? d.toISOString().slice(0, 10) : "";
+          })()}
+          onChange={(e) => {
+            const val = e.target.value; // YYYY-MM-DD or ""
+            if (!val) {
+              setFormState((prev) => ({ ...prev, date: new Date() }));
+              return;
+            }
+            // Parse at local midday to avoid any DST/UTC off-by-one surprises
+            const d = new Date(`${val}T12:00:00`);
+            setFormState((prev) => ({ ...prev, date: d }));
+          }}
+        />
+      </div>
+      <div>
+        <label
           htmlFor="payee-autocomplete"
           className="block text-sm font-medium text-sky-700 mb-1"
         >

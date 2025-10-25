@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0] - 2025-10-22
+
+### Added
+
+- Date field in the main form with a native date picker (defaults to today)
+- YNAB submissions now use the selected date in local YYYY-MM-DD format (no time)
+- SettleUp submissions now use epoch milliseconds at midday (12:00)
+
 ## [1.1.0] - 2025-07-23
 
 ### New Features
