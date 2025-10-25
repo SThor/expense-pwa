@@ -4,9 +4,9 @@
 export const VERSION_INFO = {
   "tag": "1.1.0",
   "branch": "76-make-the-dropdown-unfold-upwards-optionaly-v1",
-  "commit": "02771e5",
-  "isDirty": true,
-  "buildTime": "2025-10-25T21:08:33.086Z",
+  "commit": "12d899e",
+  "isDirty": false,
+  "buildTime": "2025-10-25T21:38:16.955Z",
   "version": "1.1.0",
   "shortVersion": "1.1.0"
 };
