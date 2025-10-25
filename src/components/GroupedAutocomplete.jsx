@@ -10,6 +10,7 @@ function GroupedAutocomplete({
   groupedItems,
   placeholder = "",
   onCreate,
+  placement = "bottom", // "bottom" | "top"
 }) {
   const [input, setInput] = useState(value || "");
   const [open, setOpen] = useState(false);
@@ -225,7 +226,11 @@ function GroupedAutocomplete({
       {open && (
         <div
           ref={dropdownRef}
-          className="absolute z-20 w-full bg-white border border-gray-300 rounded-sm shadow-lg mt-1 max-h-72 overflow-auto animate-fade-in min-w-full transition-shadow duration-200"
+          className={`absolute left-0 z-20 w-full bg-white border border-gray-300 rounded-sm shadow-lg max-h-72 overflow-auto min-w-full transition-shadow duration-200 ${
+            placement === "top"
+              ? "bottom-full mb-1 animate-fade-in-up"
+              : "top-full mt-1 animate-fade-in-down"
+          }`}
           onMouseDown={() => {
             ignoreBlurRef.current = true;
           }}
@@ -276,12 +281,19 @@ function GroupedAutocomplete({
         </div>
       )}
       <style>{`
-        .animate-fade-in {
-          animation: fadeIn 0.15s;
+        .animate-fade-in-down {
+          animation: fadeInDown 0.15s;
         }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-4px);}
-          to { opacity: 1; transform: translateY(0);}
+        .animate-fade-in-up {
+          animation: fadeInUp 0.15s;
+        }
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
@@ -305,6 +317,7 @@ GroupedAutocomplete.propTypes = {
   ).isRequired,
   placeholder: PropTypes.string,
   onCreate: PropTypes.func, // (input: string) => void, optional. If provided, allows creating new items when no match is found.
+  placement: PropTypes.oneOf(["bottom", "top"]),
 };
 
 export default GroupedAutocomplete;
