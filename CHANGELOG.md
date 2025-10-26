@@ -11,6 +11,10 @@
 - SettleUp submissions now use epoch milliseconds at midday (12:00)
 - GroupedAutocomplete: optional `placement` prop to control dropdown direction. Using `placement="top"` forces the menu to unfold upwards to avoid keyboard overlap on mobile. Includes direction-specific animations.
 
+### Bug Fixes
+
+- Swile amount cap now applies automatically when the main transaction amount changes, instead of only when the user interacts with the Swile amount field
+
 ## [1.1.0] - 2025-07-23
 
 ### New Features

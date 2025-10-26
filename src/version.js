@@ -2,13 +2,13 @@
 // Do not edit manually
 
 export const VERSION_INFO = {
-  "tag": "1.1.0",
-  "branch": "76-make-the-dropdown-unfold-upwards-optionaly-v1",
-  "commit": "4d645b5",
+  "tag": null,
+  "branch": "copilot/fix-swile-amount-cap",
+  "commit": "c56f6bc",
   "isDirty": true,
-  "buildTime": "2025-10-26T09:38:34.231Z",
-  "version": "1.1.0",
-  "shortVersion": "1.1.0"
+  "buildTime": "2025-10-26T10:35:12.053Z",
+  "version": "copilot/fix-swile-amount-cap-c56f6bc-dirty",
+  "shortVersion": "c56f6bc"
 };
 
 export const getVersionString = () => {
