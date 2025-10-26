@@ -11,6 +11,11 @@
 - SettleUp submissions now use epoch milliseconds at midday (12:00)
 - GroupedAutocomplete: optional `placement` prop to control dropdown direction. Using `placement="top"` forces the menu to unfold upwards to avoid keyboard overlap on mobile. Includes direction-specific animations.
 
+### Improvements
+
+- Updated favicon and PWA icons to match the Euro loading spinner design for cohesive branding across browser tabs, home screens, and PWA installs
+- Added icon generation script (`npm run generate-icons`) for easy regeneration of all icon assets from SVG source
+
 ### Bug Fixes
 
 - Swile amount cap now applies automatically when the main transaction amount changes, instead of only when the user interacts with the Swile amount field

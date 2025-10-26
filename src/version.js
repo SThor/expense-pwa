@@ -3,12 +3,12 @@
 
 export const VERSION_INFO = {
   "tag": null,
-  "branch": "copilot/fix-swile-amount-cap",
-  "commit": "c56f6bc",
+  "branch": "copilot/update-icons-to-loading-svg",
+  "commit": "293c8f3",
   "isDirty": true,
-  "buildTime": "2025-10-26T10:35:12.053Z",
-  "version": "copilot/fix-swile-amount-cap-c56f6bc-dirty",
-  "shortVersion": "c56f6bc"
+  "buildTime": "2025-10-26T11:09:42.757Z",
+  "version": "copilot/update-icons-to-loading-svg-293c8f3-dirty",
+  "shortVersion": "293c8f3"
 };
 
 export const getVersionString = () => {
