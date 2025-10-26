@@ -86,21 +86,12 @@ async function generateIcons() {
     console.log(`✓ Generated ${name} (${size}x${size})`);
   }
 
-  // Generate favicon.ico (16x16 and 32x32 combined)
-  const favicon16 = await sharp(Buffer.from(iconSvg))
-    .resize(16, 16)
-    .png()
-    .toBuffer();
-  const favicon32 = await sharp(Buffer.from(iconSvg))
-    .resize(32, 32)
-    .png()
-    .toBuffer();
-
-  // For .ico, we'll just use the 32x32 PNG and save it as .ico
-  // (proper .ico generation would require an ico encoder, but browsers accept PNG as .ico)
+  // Generate favicon.ico as a 32x32 PNG
+  // Note: Modern browsers accept PNG files with .ico extension
+  // For broader compatibility, a proper ICO encoder could be used in the future
   const icoPath = resolve("public", "favicon.ico");
   await sharp(Buffer.from(iconSvg)).resize(32, 32).png().toFile(icoPath);
-  console.log("✓ Generated favicon.ico (32x32)");
+  console.log("✓ Generated favicon.ico (32x32 PNG)");
 
   console.log("\nAll icons generated successfully!");
 }
