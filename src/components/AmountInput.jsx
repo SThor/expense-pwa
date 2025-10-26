@@ -50,7 +50,7 @@ export default function AmountInput({ value, onChange, max, min }) {
   // Apply constraints when min or max props change
   useEffect(() => {
     const constrainedValue = applyConstraints(value);
-    
+
     // Only call onChange if the value needs to be constrained
     if (constrainedValue !== value) {
       onChange(constrainedValue);
