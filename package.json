@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "generate-version": "node scripts/generate-version.js",
+    "generate-icons": "node scripts/generate-icons.js",
     "prebuild": "npm run generate-version",
     "pretest": "npm run generate-version",
     "pretest:run": "npm run generate-version",
@@ -53,6 +54,7 @@
     "jsdom": "^26.1.0",
     "postcss": "^8.5.6",
     "prettier": "^3.5.3",
+    "sharp": "^0.34.4",
     "tailwindcss": "^4.1.11",
     "vite": "^4.0.0",
     "vite-plugin-pwa": "^0.16.0",

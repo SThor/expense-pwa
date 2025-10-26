@@ -4,11 +4,11 @@
 export const VERSION_INFO = {
   "tag": null,
   "branch": "copilot/update-icons-to-loading-svg",
-  "commit": "e8d5244",
+  "commit": "040ed88",
   "isDirty": true,
-  "buildTime": "2025-10-26T10:38:44.077Z",
-  "version": "copilot/update-icons-to-loading-svg-e8d5244-dirty",
-  "shortVersion": "e8d5244"
+  "buildTime": "2025-10-26T10:41:20.960Z",
+  "version": "copilot/update-icons-to-loading-svg-040ed88-dirty",
+  "shortVersion": "040ed88"
 };
 
 export const getVersionString = () => {
