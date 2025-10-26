@@ -1,12 +1,15 @@
+<!-- markdownlint-disable MD024 -->
+
 # Changelog
 
-## [1.2.0] - 2025-10-22
+## [1.2.0] - 2025-10-25
 
 ### Added
 
 - Date field in the main form with a native date picker (defaults to today)
 - YNAB submissions now use the selected date in local YYYY-MM-DD format (no time)
 - SettleUp submissions now use epoch milliseconds at midday (12:00)
+- GroupedAutocomplete: optional `placement` prop to control dropdown direction. Using `placement="top"` forces the menu to unfold upwards to avoid keyboard overlap on mobile. Includes direction-specific animations.
 
 ## [1.1.0] - 2025-07-23
 
