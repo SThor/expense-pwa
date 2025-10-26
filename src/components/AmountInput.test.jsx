@@ -167,4 +167,56 @@ describe("AmountInput with max/min constraints", () => {
     // Should call onChange with the maximum value (can't be positive)
     expect(mockOnChange).toHaveBeenCalledWith(0);
   });
+
+  it("automatically applies constraint when min prop changes (Swile cap issue)", () => {
+    const mockOnChange = vi.fn();
+
+    // Initial state: Swile amount is -25.00 €, transaction amount is -20.00 €
+    // This means Swile is trying to pay more than the transaction amount, which shouldn't be allowed
+    const { rerender } = render(
+      <AmountInput
+        value={-25000} // Swile amount: -25.00 €
+        onChange={mockOnChange}
+        min={-20000} // Transaction amount: -20.00 € (Swile can't exceed this)
+        max={0} // Swile can't be positive
+      />,
+    );
+
+    // The constraint should be applied immediately, capping to -20000
+    expect(mockOnChange).toHaveBeenCalledWith(-20000);
+
+    // Clear mock to test the next scenario
+    mockOnChange.mockClear();
+
+    // Now the transaction amount increases to -30.00 €
+    // Swile amount is still at -25.00 € (after the previous cap), which is now within bounds
+    rerender(
+      <AmountInput
+        value={-20000} // Current Swile amount after previous cap: -20.00 €
+        onChange={mockOnChange}
+        min={-30000} // New transaction amount: -30.00 € (larger transaction)
+        max={0}
+      />,
+    );
+
+    // No constraint should be applied since -20000 is between -30000 (min) and 0 (max)
+    expect(mockOnChange).not.toHaveBeenCalled();
+
+    // Clear mock for next test
+    mockOnChange.mockClear();
+
+    // Now the transaction amount decreases to -15.00 €
+    // Swile amount is at -20.00 €, which exceeds the new transaction amount
+    rerender(
+      <AmountInput
+        value={-20000} // Current Swile amount: -20.00 €
+        onChange={mockOnChange}
+        min={-15000} // New transaction amount: -15.00 € (smaller transaction)
+        max={0}
+      />,
+    );
+
+    // The constraint should be applied, capping to -15000
+    expect(mockOnChange).toHaveBeenCalledWith(-15000);
+  });
 });

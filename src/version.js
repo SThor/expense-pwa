@@ -4,11 +4,11 @@
 export const VERSION_INFO = {
   "tag": null,
   "branch": "copilot/fix-swile-amount-cap",
-  "commit": "57aa005",
+  "commit": "96fc42e",
   "isDirty": true,
-  "buildTime": "2025-10-26T10:09:20.038Z",
-  "version": "copilot/fix-swile-amount-cap-57aa005-dirty",
-  "shortVersion": "57aa005"
+  "buildTime": "2025-10-26T10:11:39.748Z",
+  "version": "copilot/fix-swile-amount-cap-96fc42e-dirty",
+  "shortVersion": "96fc42e"
 };
 
 export const getVersionString = () => {

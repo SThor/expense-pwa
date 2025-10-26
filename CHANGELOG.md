@@ -8,6 +8,10 @@
 - YNAB submissions now use the selected date in local YYYY-MM-DD format (no time)
 - SettleUp submissions now use epoch milliseconds at midday (12:00)
 
+### Bug Fixes
+
+- Swile amount cap now applies automatically when the main transaction amount changes, instead of only when the user interacts with the Swile amount field
+
 ## [1.1.0] - 2025-07-23
 
 ### New Features

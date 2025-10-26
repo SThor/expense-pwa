@@ -30,6 +30,29 @@ export default function AmountInput({ value, onChange, max, min }) {
     setDisplay(milliUnitsToDisplay(value));
   }, [value]);
 
+  // Apply constraints when min or max props change
+  useEffect(() => {
+    let constrainedValue = value;
+    let needsUpdate = false;
+
+    // Apply max constraint if provided
+    if (max !== undefined && constrainedValue > max) {
+      constrainedValue = max;
+      needsUpdate = true;
+    }
+
+    // Apply min constraint if provided
+    if (min !== undefined && constrainedValue < min) {
+      constrainedValue = min;
+      needsUpdate = true;
+    }
+
+    // Only call onChange if the value needs to be constrained
+    if (needsUpdate) {
+      onChange(constrainedValue);
+    }
+  }, [min, max]);
+
   // Format input as YNAB-style cents (last 2 digits = cents)
   function formatAmountInput(raw) {
     const digits = raw.replace(/\D/g, "");
