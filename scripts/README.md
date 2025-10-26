@@ -13,6 +13,7 @@ npm run generate-icons
 ```
 
 This script will generate:
+
 - `public/favicon.svg` - SVG version of the Euro icon
 - `public/favicon.ico` - 32x32 ICO favicon
 - `public/favicon-96x96.png` - 96x96 PNG favicon
