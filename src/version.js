@@ -3,10 +3,10 @@
 
 export const VERSION_INFO = {
   "tag": "1.1.0",
-  "branch": "75-add-a-date-field-for-transactions",
-  "commit": "a6884f5",
+  "branch": "76-make-the-dropdown-unfold-upwards-optionaly-v1",
+  "commit": "4d645b5",
   "isDirty": true,
-  "buildTime": "2025-10-25T20:48:40.937Z",
+  "buildTime": "2025-10-26T09:38:34.231Z",
   "version": "1.1.0",
   "shortVersion": "1.1.0"
 };

@@ -548,4 +548,88 @@ describe("GroupedAutocomplete", () => {
       expect(screen.queryByText("No matches")).not.toBeInTheDocument();
     });
   });
+
+  test("placement defaults to bottom (downward classes)", async () => {
+    const user = userEvent.setup();
+    const testData = [];
+
+    render(
+      <GroupedAutocomplete
+        value=""
+        onChange={mockOnChange}
+        groupedItems={testData}
+        placeholder="Test Field"
+        // placement omitted -> should default to bottom
+      />,
+    );
+
+    const input = screen.getByRole("textbox");
+    await user.click(input); // Open dropdown
+
+    const noMatches = await screen.findByText("No matches");
+    const dropdown = noMatches.parentElement; // direct parent is the dropdown container
+    expect(dropdown).toBeTruthy();
+    const cls = dropdown.className;
+    expect(cls).toMatch(/\btop-full\b/);
+    expect(cls).toMatch(/\bmt-1\b/);
+    expect(cls).toMatch(/\banimate-fade-in-down\b/);
+    expect(cls).not.toMatch(/\bbottom-full\b/);
+  });
+
+  test("placement=top opens upwards (upward classes)", async () => {
+    const user = userEvent.setup();
+    const testData = [];
+
+    render(
+      <GroupedAutocomplete
+        value=""
+        onChange={mockOnChange}
+        groupedItems={testData}
+        placeholder="Test Field"
+        placement="top"
+      />,
+    );
+
+    const input = screen.getByRole("textbox");
+    await user.click(input); // Open dropdown
+
+    const noMatches = await screen.findByText("No matches");
+    const dropdown = noMatches.parentElement;
+    expect(dropdown).toBeTruthy();
+    const cls = dropdown.className;
+    expect(cls).toMatch(/\bbottom-full\b/);
+    expect(cls).toMatch(/\bmb-1\b/);
+    expect(cls).toMatch(/\banimate-fade-in-up\b/);
+    expect(cls).not.toMatch(/\btop-full\b/);
+  });
+
+  test("warns when placement prop has an invalid value", async () => {
+    const user = userEvent.setup();
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    const testData = [];
+    render(
+      <GroupedAutocomplete
+        value=""
+        onChange={mockOnChange}
+        groupedItems={testData}
+        placeholder="Test Field"
+        // @ts-expect-error testing invalid prop value
+        placement={"invalid-value"}
+      />,
+    );
+
+    const input = screen.getByRole("textbox");
+    await user.click(input);
+
+    // PropTypes should warn about invalid enum value
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    const messages = consoleErrorSpy.mock.calls.flat().join("\n");
+    expect(messages).toMatch(/Invalid prop `placement`/);
+    expect(messages).toMatch(/GroupedAutocomplete/);
+
+    consoleErrorSpy.mockRestore();
+  });
 });
