@@ -30,6 +30,33 @@ export default function AmountInput({ value, onChange, max, min }) {
     setDisplay(milliUnitsToDisplay(value));
   }, [value]);
 
+  // Helper function to apply constraints to a value
+  function applyConstraints(val) {
+    let constrainedValue = val;
+
+    // Apply max constraint if provided
+    if (max !== undefined && constrainedValue > max) {
+      constrainedValue = max;
+    }
+
+    // Apply min constraint if provided
+    if (min !== undefined && constrainedValue < min) {
+      constrainedValue = min;
+    }
+
+    return constrainedValue;
+  }
+
+  // Apply constraints when min or max props change
+  useEffect(() => {
+    const constrainedValue = applyConstraints(value);
+
+    // Only call onChange if the value needs to be constrained
+    if (constrainedValue !== value) {
+      onChange(constrainedValue);
+    }
+  }, [min, max]);
+
   // Format input as YNAB-style cents (last 2 digits = cents)
   function formatAmountInput(raw) {
     const digits = raw.replace(/\D/g, "");
@@ -52,20 +79,12 @@ export default function AmountInput({ value, onChange, max, min }) {
 
   // Apply constraints and update the value
   function applyConstraintsAndUpdate(newValue) {
-    // Apply max constraint if provided
-    if (max !== undefined && newValue > max) {
-      newValue = max;
-    }
-
-    // Apply min constraint if provided
-    if (min !== undefined && newValue < min) {
-      newValue = min;
-    }
+    const constrainedValue = applyConstraints(newValue);
 
     // Update display to reflect the final value (after constraints)
-    setDisplay(milliUnitsToDisplay(newValue));
+    setDisplay(milliUnitsToDisplay(constrainedValue));
 
-    onChange(newValue);
+    onChange(constrainedValue);
   }
 
   function handleChange(e) {

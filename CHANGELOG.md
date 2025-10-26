@@ -16,6 +16,10 @@
 - Updated favicon and PWA icons to match the Euro loading spinner design for cohesive branding across browser tabs, home screens, and PWA installs
 - Added icon generation script (`npm run generate-icons`) for easy regeneration of all icon assets from SVG source
 
+### Bug Fixes
+
+- Swile amount cap now applies automatically when the main transaction amount changes, instead of only when the user interacts with the Swile amount field
+
 ## [1.1.0] - 2025-07-23
 
 ### New Features
