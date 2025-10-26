@@ -30,25 +30,29 @@ export default function AmountInput({ value, onChange, max, min }) {
     setDisplay(milliUnitsToDisplay(value));
   }, [value]);
 
-  // Apply constraints when min or max props change
-  useEffect(() => {
-    let constrainedValue = value;
-    let needsUpdate = false;
+  // Helper function to apply constraints to a value
+  function applyConstraints(val) {
+    let constrainedValue = val;
 
     // Apply max constraint if provided
     if (max !== undefined && constrainedValue > max) {
       constrainedValue = max;
-      needsUpdate = true;
     }
 
     // Apply min constraint if provided
     if (min !== undefined && constrainedValue < min) {
       constrainedValue = min;
-      needsUpdate = true;
     }
 
+    return constrainedValue;
+  }
+
+  // Apply constraints when min or max props change
+  useEffect(() => {
+    const constrainedValue = applyConstraints(value);
+    
     // Only call onChange if the value needs to be constrained
-    if (needsUpdate) {
+    if (constrainedValue !== value) {
       onChange(constrainedValue);
     }
   }, [min, max]);
@@ -75,20 +79,12 @@ export default function AmountInput({ value, onChange, max, min }) {
 
   // Apply constraints and update the value
   function applyConstraintsAndUpdate(newValue) {
-    // Apply max constraint if provided
-    if (max !== undefined && newValue > max) {
-      newValue = max;
-    }
-
-    // Apply min constraint if provided
-    if (min !== undefined && newValue < min) {
-      newValue = min;
-    }
+    const constrainedValue = applyConstraints(newValue);
 
     // Update display to reflect the final value (after constraints)
-    setDisplay(milliUnitsToDisplay(newValue));
+    setDisplay(milliUnitsToDisplay(constrainedValue));
 
-    onChange(newValue);
+    onChange(constrainedValue);
   }
 
   function handleChange(e) {

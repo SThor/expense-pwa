@@ -189,7 +189,7 @@ describe("AmountInput with max/min constraints", () => {
     mockOnChange.mockClear();
 
     // Now the transaction amount increases to -30.00 €
-    // Swile amount is still at -25.00 € (after the previous cap), which is now within bounds
+    // Swile amount is at -20.00 € (after the previous cap), which is now within bounds
     rerender(
       <AmountInput
         value={-20000} // Current Swile amount after previous cap: -20.00 €
