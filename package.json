@@ -57,7 +57,7 @@
     "sharp": "^0.34.4",
     "tailwindcss": "^4.1.11",
     "vite": "^4.0.0",
-    "vite-plugin-pwa": "^0.16.0",
+    "vite-plugin-pwa": "^1.1.0",
     "vitest": "^3.2.4"
   },
   "description": "A Progressive Web App for shared expenses entry in YNAB & SettleUp",
