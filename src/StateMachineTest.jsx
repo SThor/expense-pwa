@@ -2,6 +2,7 @@ import React from 'react';
 import { useMachine } from '@xstate/react';
 import { fromPromise } from 'xstate';
 import { apiSyncStateMachine } from './machines/apiSyncStateMachine';
+import ApiSyncStepper from './components/ApiSyncStepper';
 
 function StateMachineTest() {
   const [ynabResolver, setYnabResolver] = React.useState(null);
@@ -107,6 +108,9 @@ function StateMachineTest() {
           ))}
         </ul>
       </div>
+
+      {/* API Sync Stepper */}
+      <ApiSyncStepper state={state} context={state.context} />
 
       {/* Context Display */}
       <div style={{ background: '#e8f4f8', padding: '10px', marginBottom: '20px' }}>
