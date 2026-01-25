@@ -7,6 +7,28 @@ function StateMachineTest() {
   const [ynabResolver, setYnabResolver] = React.useState(null);
   const [settleupResolver, setSettleupResolver] = React.useState(null);
   
+  // Create mock formState objects for testing
+  const createMockFormState = (target) => ({
+    amountMilliunits: 25000, // $25.00
+    description: "Test Transaction",
+    target,
+    account: { bourso: true, swile: false },
+    payee: "Test Merchant",
+    payeeId: "test-payee-id",
+    category: "Groceries",
+    categoryId: "test-category-id",
+    date: new Date(),
+    settleUpCategory: "Food",
+    settleUpGroups: null,
+    settleUpGroup: null,
+    settleUpPayerId: "",
+    settleUpMembers: [],
+    settleUpCurrency: "EUR",
+    swileMilliunits: 25000,
+    showAccounts: false,
+    showDetails: false,
+  });
+  
   // Add debugging
   React.useEffect(() => {
     console.log('ynabResolver updated:', ynabResolver);
@@ -105,7 +127,10 @@ function StateMachineTest() {
         <h3>Start Sync:</h3>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button 
-            onClick={() => send({ type: 'START_SYNC', targets: { ynab: true, settleup: false } })}
+            onClick={() => send({ 
+              type: 'START_SYNC', 
+              formState: createMockFormState({ ynab: true, settleup: false })
+            })}
             disabled={!state.matches('idle')}
             style={{
               padding: '12px 24px',
@@ -122,7 +147,10 @@ function StateMachineTest() {
             YNAB Only
           </button>
           <button 
-            onClick={() => send({ type: 'START_SYNC', targets: { ynab: false, settleup: true } })}
+            onClick={() => send({ 
+              type: 'START_SYNC', 
+              formState: createMockFormState({ ynab: false, settleup: true })
+            })}
             disabled={!state.matches('idle')}
             style={{
               padding: '12px 24px',
@@ -139,7 +167,10 @@ function StateMachineTest() {
             SettleUp Only
           </button>
           <button 
-            onClick={() => send({ type: 'START_SYNC', targets: { ynab: true, settleup: true } })}
+            onClick={() => send({ 
+              type: 'START_SYNC', 
+              formState: createMockFormState({ ynab: true, settleup: true })
+            })}
             disabled={!state.matches('idle')}
             style={{
               padding: '12px 24px',

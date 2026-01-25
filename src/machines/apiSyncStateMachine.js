@@ -4,7 +4,7 @@ export const apiSyncStateMachine = createMachine({
   id: 'apiSync',
   initial: 'idle',
   context: {
-    targets: { ynab: false, settleup: false }, // Which APIs to call
+    formState: null,                           // Complete transaction data
     results: { ynab: null, settleup: null },   // API results
     errors: { ynab: null, settleup: null },    // API errors
   },
@@ -14,7 +14,7 @@ export const apiSyncStateMachine = createMachine({
         START_SYNC: {
           target: 'syncing',
           actions: assign({
-            targets: ({ event }) => event.targets,
+            formState: ({ event }) => event.formState,
             results: { ynab: null, settleup: null },
             errors: { ynab: null, settleup: null },
           }),
@@ -34,7 +34,7 @@ export const apiSyncStateMachine = createMachine({
                   target: 'submitting', 
                   guard: { 
                     type: 'ynabTargeted',
-                    params: ({ context }) => ({ targets: context.targets })
+                    params: ({ context }) => ({ formState: context.formState })
                   }
                 },
                 { target: 'skipped' },
@@ -85,7 +85,7 @@ export const apiSyncStateMachine = createMachine({
                   target: 'submitting', 
                   guard: { 
                     type: 'settleupTargeted',
-                    params: ({ context }) => ({ targets: context.targets })
+                    params: ({ context }) => ({ formState: context.formState })
                   }
                 },
                 { target: 'skipped' },
@@ -157,9 +157,12 @@ export const apiSyncStateMachine = createMachine({
         RETRY_FAILED: {
           target: 'syncing',
           actions: assign({
-            targets: ({ context }) => ({
-              ynab: context.targets.ynab && !!context.errors.ynab,
-              settleup: context.targets.settleup && !!context.errors.settleup,
+            formState: ({ context }) => ({
+              ...context.formState,
+              target: {
+                ynab: context.formState.target.ynab && !!context.errors.ynab,
+                settleup: context.formState.target.settleup && !!context.errors.settleup,
+              }
             }),
           }),
         },
@@ -176,12 +179,12 @@ export const apiSyncStateMachine = createMachine({
   },
 }, {
   guards: {
-    ynabTargeted: ({ context }) => context.targets.ynab,
-    settleupTargeted: ({ context }) => context.targets.settleup,
+    ynabTargeted: ({ context }) => context.formState?.target?.ynab || false,
+    settleupTargeted: ({ context }) => context.formState?.target?.settleup || false,
     allTargetsSucceeded: ({ context }) => {
       // An API is "OK" if: not targeted OR (has result AND no error)
-      const ynabOk = !context.targets.ynab || (!!context.results.ynab && !context.errors.ynab);
-      const settleupOk = !context.targets.settleup || (!!context.results.settleup && !context.errors.settleup);
+      const ynabOk = !context.formState?.target?.ynab || (!!context.results.ynab && !context.errors.ynab);
+      const settleupOk = !context.formState?.target?.settleup || (!!context.results.settleup && !context.errors.settleup);
       return ynabOk && settleupOk;
     },
     partialTargetsSucceeded: ({ context }) => {
@@ -189,14 +192,14 @@ export const apiSyncStateMachine = createMachine({
       const targetedApis = [];
       const successfulApis = [];
       
-      if (context.targets.ynab) {
+      if (context.formState?.target?.ynab) {
         targetedApis.push('ynab');
         if (context.results.ynab && !context.errors.ynab) {
           successfulApis.push('ynab');
         }
       }
       
-      if (context.targets.settleup) {
+      if (context.formState?.target?.settleup) {
         targetedApis.push('settleup');
         if (context.results.settleup && !context.errors.settleup) {
           successfulApis.push('settleup');
