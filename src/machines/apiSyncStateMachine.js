@@ -148,7 +148,14 @@ export const apiSyncStateMachine = createMachine({
 
     success: {
       on: {
-        RESET: { target: 'idle' },
+        RESET: { 
+          target: 'idle',
+          actions: assign({
+            formState: null,
+            results: { ynab: null, settleup: null },
+            errors: { ynab: null, settleup: null },
+          }),
+        },
       },
     },
 
@@ -164,16 +171,38 @@ export const apiSyncStateMachine = createMachine({
                 settleup: context.formState.target.settleup && !!context.errors.settleup,
               }
             }),
+            results: { ynab: null, settleup: null },
+            errors: { ynab: null, settleup: null },
           }),
         },
-        RESET: { target: 'idle' },
+        RESET: { 
+          target: 'idle',
+          actions: assign({
+            formState: null,
+            results: { ynab: null, settleup: null },
+            errors: { ynab: null, settleup: null },
+          }),
+        },
       },
     },
 
     error: {
       on: {
-        RETRY: { target: 'syncing' },
-        RESET: { target: 'idle' },
+        RETRY: { 
+          target: 'syncing',
+          actions: assign({
+            results: { ynab: null, settleup: null },
+            errors: { ynab: null, settleup: null },
+          }),
+        },
+        RESET: { 
+          target: 'idle',
+          actions: assign({
+            formState: null,
+            results: { ynab: null, settleup: null },
+            errors: { ynab: null, settleup: null },
+          }),
+        },
       },
     },
   },
