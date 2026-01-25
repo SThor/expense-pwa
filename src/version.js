@@ -4,9 +4,9 @@
 export const VERSION_INFO = {
   "tag": "1.2.0",
   "branch": "87-implement-state-machine-with-stepper-visualization-for-api-call-coordination-ynab-settleup",
-  "commit": "db9640f",
+  "commit": "9f38fb4",
   "isDirty": true,
-  "buildTime": "2026-01-25T19:41:23.714Z",
+  "buildTime": "2026-01-25T22:58:40.859Z",
   "version": "1.2.0",
   "shortVersion": "1.2.0"
 };

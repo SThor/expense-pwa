@@ -26,12 +26,8 @@ const ApiSyncStepper = ({ state, context }) => {
       currentState === "syncing" ||
       (typeof currentState === "object" && currentState.syncing)
     ) {
-      // Try to get nested state from different possible structures
-      const apiState =
-        state?.value?.syncing?.[apiName] ||
-        (state?.value && typeof state.value === "object"
-          ? state.value.syncing?.[apiName]
-          : null);
+      // Get nested state from syncing structure
+      const apiState = state?.value?.syncing?.[apiName];
       if (apiState === "submitting") return "current";
       if (apiState === "success") return "success";
       if (apiState === "error") return "error";
@@ -49,10 +45,6 @@ const ApiSyncStepper = ({ state, context }) => {
       case "entry":
         return currentState === "idle" ? "current" : "success";
 
-      case "ynab":
-      case "settleup":
-        return getApiStepState(stepName);
-
       case "complete":
         return ["success", "error", "partialSuccess"].includes(currentState)
           ? currentState === "success"
@@ -62,8 +54,8 @@ const ApiSyncStepper = ({ state, context }) => {
               : "inactive"
           : "inactive";
 
-      default:
-        return "inactive";
+      default: // ynab or settleup
+        return getApiStepState(stepName);
     }
   };
 
