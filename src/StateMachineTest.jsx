@@ -127,29 +127,6 @@ function StateMachineTest() {
       {/* API Sync Stepper */}
       <ApiSyncStepper state={state} context={state.context} />
 
-      {/* Context Display */}
-      <div
-        style={{ background: "#e8f4f8", padding: "10px", marginBottom: "20px" }}
-      >
-        <h3>Context:</h3>
-        <pre>{JSON.stringify(state.context, null, 2)}</pre>
-      </div>
-
-      {/* Debug Info */}
-      <div
-        style={{
-          background: "#fff3cd",
-          padding: "10px",
-          marginBottom: "20px",
-          border: "1px solid #ffeaa7",
-        }}
-      >
-        <h3>Debug Info:</h3>
-        <p>YNAB Resolver: {ynabResolver ? "SET" : "NULL"}</p>
-        <p>SettleUp Resolver: {settleupResolver ? "SET" : "NULL"}</p>
-        <p>Check browser console for detailed logs</p>
-      </div>
-
       {/* Start Controls */}
       <div style={{ marginBottom: "20px" }}>
         <h3>Start Sync:</h3>
@@ -404,29 +381,12 @@ function StateMachineTest() {
         </button>
       </div>
 
-      {/* Instructions */}
+      {/* Context Display */}
       <div
-        style={{
-          background: "#fff3cd",
-          padding: "10px",
-          border: "1px solid #ffeaa7",
-        }}
+        style={{ background: "#e8f4f8", padding: "10px", marginBottom: "20px" }}
       >
-        <h4>Instructions:</h4>
-        <ol>
-          <li>
-            Click one of the &quot;Start Sync&quot; buttons to select which APIs
-            to call
-          </li>
-          <li>
-            When APIs start (⏳ Waiting...), use
-            &quot;Success&quot;/&quot;Fail&quot; buttons to control outcomes
-          </li>
-          <li>Watch how the state machine transitions based on your choices</li>
-          <li>
-            Test different combinations: both succeed, both fail, one of each
-          </li>
-        </ol>
+        <h3>Context:</h3>
+        <pre>{JSON.stringify(state.context, null, 2)}</pre>
       </div>
     </div>
   );

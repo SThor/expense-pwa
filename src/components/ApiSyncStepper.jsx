@@ -2,11 +2,46 @@ import PropTypes from "prop-types";
 import React from "react";
 import { MdCheck, MdClose, MdCircle, MdMoreHoriz } from "react-icons/md";
 
+// Color constants
+const COLORS = {
+  current: "#3b82f6", // blue
+  success: "#22c55e", // green
+  error: "#ef4444", // red
+  disabled: "#9ca3af", // gray
+  inactive: "#9ca3af", // same gray (but semantically different)
+};
+
 const ApiSyncStepper = ({ state, context }) => {
   const currentState = state?.value || "idle";
   const formState = context?.formState;
   const results = context?.results || {};
   const errors = context?.errors || {};
+
+  // Helper function for API step state logic (ynab/settleup)
+  const getApiStepState = (apiName) => {
+    if (!formState?.target?.[apiName]) return "disabled";
+
+    // Check if we're in any syncing state
+    if (
+      currentState === "syncing" ||
+      (typeof currentState === "object" && currentState.syncing)
+    ) {
+      // Try to get nested state from different possible structures
+      const apiState =
+        state?.value?.syncing?.[apiName] ||
+        (state?.value && typeof state.value === "object"
+          ? state.value.syncing?.[apiName]
+          : null);
+      if (apiState === "submitting") return "current";
+      if (apiState === "success") return "success";
+      if (apiState === "error") return "error";
+      // If API is targeted and we're syncing, show as current
+      return "current";
+    }
+    if (results[apiName] && !errors[apiName]) return "success";
+    if (errors[apiName]) return "error";
+    return "inactive";
+  };
 
   // Simplified step state determination
   const getStepState = (stepName) => {
@@ -15,50 +50,8 @@ const ApiSyncStepper = ({ state, context }) => {
         return currentState === "idle" ? "current" : "success";
 
       case "ynab":
-        if (!formState?.target?.ynab) return "disabled";
-        // Check if we're in any syncing state
-        if (
-          currentState === "syncing" ||
-          (typeof currentState === "object" && currentState.syncing)
-        ) {
-          // Try to get nested state from different possible structures
-          const ynabState =
-            state?.value?.syncing?.ynab ||
-            (state?.value && typeof state.value === "object"
-              ? state.value.syncing?.ynab
-              : null);
-          if (ynabState === "submitting") return "current";
-          if (ynabState === "success") return "success";
-          if (ynabState === "error") return "error";
-          // If YNAB is targeted and we're syncing, show as current
-          return "current";
-        }
-        if (results.ynab && !errors.ynab) return "success";
-        if (errors.ynab) return "error";
-        return "inactive";
-
       case "settleup":
-        if (!formState?.target?.settleup) return "disabled";
-        // Check if we're in any syncing state
-        if (
-          currentState === "syncing" ||
-          (typeof currentState === "object" && currentState.syncing)
-        ) {
-          // Try to get nested state from different possible structures
-          const settleupState =
-            state?.value?.syncing?.settleup ||
-            (state?.value && typeof state.value === "object"
-              ? state.value.syncing?.settleup
-              : null);
-          if (settleupState === "submitting") return "current";
-          if (settleupState === "success") return "success";
-          if (settleupState === "error") return "error";
-          // If SettleUp is targeted and we're syncing, show as current
-          return "current";
-        }
-        if (results.settleup && !errors.settleup) return "success";
-        if (errors.settleup) return "error";
-        return "inactive";
+        return getApiStepState(stepName);
 
       case "complete":
         return ["success", "error", "partialSuccess"].includes(currentState)
@@ -81,65 +74,21 @@ const ApiSyncStepper = ({ state, context }) => {
     complete: getStepState("complete"),
   };
 
-  // Simplified color and line logic
+  // Simplified color logic
   const getColor = (stepState) => {
-    const colors = {
-      current: "#3b82f6", // blue
-      success: "#22c55e", // green
-      error: "#ef4444", // red
-      disabled: "#9ca3af", // gray
-      inactive: "#9ca3af", // same gray as disabled
-    };
-    return colors[stepState] || colors.inactive;
+    return COLORS[stepState] || COLORS.inactive;
   };
 
   const getOpacity = (stepState) => {
-    return stepState === "inactive" ? 0.6 : 1;
+    return stepState === "disabled" ? 0.5 : 1;
   };
 
-  // New line color logic
-  const getLineColor = (startStep, endStep) => {
-    const startColor = getColor(startStep);
-    const endColor = getColor(endStep);
-
-    // If both have same color, use that color
-    if (startColor === endColor) {
-      return startColor;
-    }
-
-    // Otherwise use end step color
-    return endColor;
-  };
-
-  const getEntryToSplitColor = () => {
-    // Priority to active branch if only one is active
-    const ynabActive = steps.ynab !== "disabled";
-    const settleupActive = steps.settleup !== "disabled";
-
-    if (ynabActive && !settleupActive) {
-      return getColor(steps.ynab);
-    }
-    if (settleupActive && !ynabActive) {
-      return getColor(steps.settleup);
-    }
-
-    // If both active or both inactive, use entry color
-    return getColor(steps.entry);
-  };
-
-  const getBranchToJoinColor = (branchStep) => {
-    // If branch is disabled/inactive, keep branch color
-    if (branchStep === "disabled" || branchStep === "inactive") {
-      return getColor(branchStep);
-    }
-
-    // Otherwise use complete color
-    return getColor(steps.complete);
-  };
-
-  const getJoinToCompleteColor = () => {
-    // Use complete color
-    return getColor(steps.complete);
+  // Line color based on destination step
+  const getLineColor = (endStepState, branchIsDisabled = false) => {
+    // If on a disabled branch, use disabled color
+    if (branchIsDisabled) return getColor("disabled");
+    // Otherwise use the destination step's color
+    return getColor(endStepState);
   };
 
   const StepIcon = ({ stepState, size = 24 }) => {
@@ -164,7 +113,10 @@ const ApiSyncStepper = ({ state, context }) => {
 
   const StepCircle = ({ stepState, label, x, y }) => {
     const color = getColor(stepState);
-    const opacity = stepState === "disabled" ? 0.5 : getOpacity(stepState);
+    // Only apply disabled opacity to API steps after entry completes
+    const isApiStep = label === "YNAB" || label === "SettleUp";
+    const opacity =
+      isApiStep && steps.entry !== "success" ? 1 : getOpacity(stepState);
 
     return (
       <g opacity={opacity}>
@@ -229,7 +181,13 @@ const ApiSyncStepper = ({ state, context }) => {
 
   // Helper function to create path elements
   const createPath = (d, stroke, strokeWidth = 3) => (
-    <path d={d} fill="none" stroke={stroke} strokeWidth={strokeWidth} />
+    <path
+      d={d}
+      fill="none"
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+    />
   );
 
   const createLine = (x1, y1, x2, y2, stroke, strokeWidth = 3) => (
@@ -240,6 +198,7 @@ const ApiSyncStepper = ({ state, context }) => {
       y2={y2}
       stroke={stroke}
       strokeWidth={strokeWidth}
+      strokeLinecap="round"
     />
   );
 
@@ -258,13 +217,43 @@ const ApiSyncStepper = ({ state, context }) => {
     cornerRadius: 15,
   };
 
-  // Calculate all line colors using new logic
+  // Calculate line colors based on destination steps
+  const getEntryToSplitColor = () => {
+    const activeBranches = [steps.ynab, steps.settleup].filter(
+      (step) => step !== "disabled",
+    );
+
+    // If no active branches, use disabled color
+    if (activeBranches.length === 0) return getColor("disabled");
+
+    // If only one active branch, use its color
+    if (activeBranches.length === 1) return getColor(activeBranches[0]);
+
+    // Both active - return color by priority: error > current > success > inactive
+    const statePriority = ["error", "current", "success", "inactive"];
+
+    for (const state of statePriority) {
+      if (activeBranches.includes(state)) return getColor(state);
+    }
+
+    return getColor(steps.entry); // fallback
+  };
+
   const entryToSplitColor = getEntryToSplitColor();
-  const ynabBranchColor = getColor(steps.ynab);
-  const settleupBranchColor = getColor(steps.settleup);
-  const ynabToJoinColor = getBranchToJoinColor(steps.ynab);
-  const settleupToJoinColor = getBranchToJoinColor(steps.settleup);
-  const joinToCompleteColor = getJoinToCompleteColor();
+  const ynabBranchColor = getLineColor(steps.ynab, steps.ynab === "disabled");
+  const settleupBranchColor = getLineColor(
+    steps.settleup,
+    steps.settleup === "disabled",
+  );
+  const ynabToJoinColor = getLineColor(
+    steps.complete,
+    steps.ynab === "disabled",
+  );
+  const settleupToJoinColor = getLineColor(
+    steps.complete,
+    steps.settleup === "disabled",
+  );
+  const joinToCompleteColor = getLineColor(steps.complete);
 
   // Extract error information
   const errorList = [];
@@ -281,176 +270,166 @@ const ApiSyncStepper = ({ state, context }) => {
 
   return (
     <div className="w-full">
-      <div className="bg-white rounded-lg p-8 mb-4">
-        <h3 className="text-lg font-semibold mb-6 text-gray-800">
-          API Sync Progress
-        </h3>
+      <svg
+        viewBox={`0 0 ${layout.width} ${layout.height}`}
+        className="w-full h-auto"
+      >
+        {/* Main horizontal line from Entry to split */}
+        {createLine(
+          layout.entryX + 20,
+          layout.centerY,
+          layout.splitX - layout.cornerRadius,
+          layout.centerY,
+          entryToSplitColor,
+        )}
 
-        <svg
-          viewBox={`0 0 ${layout.width} ${layout.height}`}
-          className="w-full h-auto"
-        >
-          {/* Main horizontal line from Entry to split */}
-          {createLine(
-            layout.entryX + 20,
-            layout.centerY,
-            layout.splitX - layout.cornerRadius,
-            layout.centerY,
-            entryToSplitColor,
-          )}
-
-          {/* YNAB branch */}
-          <g opacity={steps.ynab === "disabled" ? 0.5 : getOpacity(steps.ynab)}>
-            {/* Split to YNAB - use YNAB color for the corner */}
-            {createPath(
-              `M ${layout.splitX - layout.cornerRadius} ${layout.centerY} 
+        {/* YNAB branch */}
+        <g opacity={steps.entry === "success" ? getOpacity(steps.ynab) : 1}>
+          {/* Split to YNAB - use YNAB color for the corner */}
+          {createPath(
+            `M ${layout.splitX - layout.cornerRadius} ${layout.centerY} 
                Q ${layout.splitX} ${layout.centerY}, ${layout.splitX} ${layout.centerY - layout.cornerRadius}`,
-              ynabBranchColor,
-            )}
-            {createLine(
-              layout.splitX,
-              layout.centerY - layout.cornerRadius,
-              layout.splitX,
-              layout.ynabY + layout.cornerRadius,
-              ynabBranchColor,
-            )}
-            {createPath(
-              `M ${layout.splitX} ${layout.ynabY + layout.cornerRadius}
-               Q ${layout.splitX} ${layout.ynabY}, ${layout.splitX + layout.cornerRadius} ${layout.ynabY}`,
-              ynabBranchColor,
-            )}
-            {createLine(
-              layout.splitX + layout.cornerRadius,
-              layout.ynabY,
-              layout.branchX - 20,
-              layout.ynabY,
-              ynabBranchColor,
-            )}
-
-            {/* YNAB to join - use branch-to-join color */}
-            {createLine(
-              layout.branchX + 20,
-              layout.ynabY,
-              layout.joinX - layout.cornerRadius,
-              layout.ynabY,
-              ynabToJoinColor,
-            )}
-            {createPath(
-              `M ${layout.joinX - layout.cornerRadius} ${layout.ynabY}
-               Q ${layout.joinX} ${layout.ynabY}, ${layout.joinX} ${layout.ynabY + layout.cornerRadius}`,
-              ynabToJoinColor,
-            )}
-            {createLine(
-              layout.joinX,
-              layout.ynabY + layout.cornerRadius,
-              layout.joinX,
-              layout.centerY - layout.cornerRadius,
-              ynabToJoinColor,
-            )}
-            {/* Corner from YNAB vertical to center horizontal */}
-            {createPath(
-              `M ${layout.joinX} ${layout.centerY - layout.cornerRadius}
-               Q ${layout.joinX} ${layout.centerY}, ${layout.joinX + layout.cornerRadius} ${layout.centerY}`,
-              ynabToJoinColor,
-            )}
-          </g>
-
-          {/* SettleUp branch */}
-          <g
-            opacity={
-              steps.settleup === "disabled" ? 0.5 : getOpacity(steps.settleup)
-            }
-          >
-            {/* Split to SettleUp - use SettleUp color for the corner */}
-            {createPath(
-              `M ${layout.splitX - layout.cornerRadius} ${layout.centerY}
-               Q ${layout.splitX} ${layout.centerY}, ${layout.splitX} ${layout.centerY + layout.cornerRadius}`,
-              settleupBranchColor,
-            )}
-            {createLine(
-              layout.splitX,
-              layout.centerY + layout.cornerRadius,
-              layout.splitX,
-              layout.settleupY - layout.cornerRadius,
-              settleupBranchColor,
-            )}
-            {createPath(
-              `M ${layout.splitX} ${layout.settleupY - layout.cornerRadius}
-               Q ${layout.splitX} ${layout.settleupY}, ${layout.splitX + layout.cornerRadius} ${layout.settleupY}`,
-              settleupBranchColor,
-            )}
-            {createLine(
-              layout.splitX + layout.cornerRadius,
-              layout.settleupY,
-              layout.branchX - 20,
-              layout.settleupY,
-              settleupBranchColor,
-            )}
-
-            {/* SettleUp to join - use branch-to-join color */}
-            {createLine(
-              layout.branchX + 20,
-              layout.settleupY,
-              layout.joinX - layout.cornerRadius,
-              layout.settleupY,
-              settleupToJoinColor,
-            )}
-            {createPath(
-              `M ${layout.joinX - layout.cornerRadius} ${layout.settleupY}
-               Q ${layout.joinX} ${layout.settleupY}, ${layout.joinX} ${layout.settleupY - layout.cornerRadius}`,
-              settleupToJoinColor,
-            )}
-            {createLine(
-              layout.joinX,
-              layout.settleupY - layout.cornerRadius,
-              layout.joinX,
-              layout.centerY + layout.cornerRadius,
-              settleupToJoinColor,
-            )}
-            {/* Corner from SettleUp vertical to center horizontal */}
-            {createPath(
-              `M ${layout.joinX} ${layout.centerY + layout.cornerRadius}
-               Q ${layout.joinX} ${layout.centerY}, ${layout.joinX + layout.cornerRadius} ${layout.centerY}`,
-              settleupToJoinColor,
-            )}
-          </g>
-
-          {/* Final line to complete */}
+            ynabBranchColor,
+          )}
           {createLine(
-            layout.joinX + layout.cornerRadius,
-            layout.centerY,
-            layout.completeX - 20,
-            layout.centerY,
-            joinToCompleteColor,
+            layout.splitX,
+            layout.centerY - layout.cornerRadius,
+            layout.splitX,
+            layout.ynabY + layout.cornerRadius,
+            ynabBranchColor,
+          )}
+          {createPath(
+            `M ${layout.splitX} ${layout.ynabY + layout.cornerRadius}
+               Q ${layout.splitX} ${layout.ynabY}, ${layout.splitX + layout.cornerRadius} ${layout.ynabY}`,
+            ynabBranchColor,
+          )}
+          {createLine(
+            layout.splitX + layout.cornerRadius,
+            layout.ynabY,
+            layout.branchX - 20,
+            layout.ynabY,
+            ynabBranchColor,
           )}
 
-          {/* Step circles */}
-          <StepCircle
-            stepState={steps.entry}
-            label="Entry"
-            x={layout.entryX}
-            y={layout.centerY}
-          />
-          <StepCircle
-            stepState={steps.ynab}
-            label="YNAB"
-            x={layout.branchX}
-            y={layout.ynabY}
-          />
-          <StepCircle
-            stepState={steps.settleup}
-            label="SettleUp"
-            x={layout.branchX}
-            y={layout.settleupY}
-          />
-          <StepCircle
-            stepState={steps.complete}
-            label="Complete"
-            x={layout.completeX}
-            y={layout.centerY}
-          />
-        </svg>
-      </div>
+          {/* YNAB to join - use branch-to-join color */}
+          {createLine(
+            layout.branchX + 20,
+            layout.ynabY,
+            layout.joinX - layout.cornerRadius,
+            layout.ynabY,
+            ynabToJoinColor,
+          )}
+          {createPath(
+            `M ${layout.joinX - layout.cornerRadius} ${layout.ynabY}
+               Q ${layout.joinX} ${layout.ynabY}, ${layout.joinX} ${layout.ynabY + layout.cornerRadius}`,
+            ynabToJoinColor,
+          )}
+          {createLine(
+            layout.joinX,
+            layout.ynabY + layout.cornerRadius,
+            layout.joinX,
+            layout.centerY - layout.cornerRadius,
+            ynabToJoinColor,
+          )}
+          {/* Corner from YNAB vertical to center horizontal */}
+          {createPath(
+            `M ${layout.joinX} ${layout.centerY - layout.cornerRadius}
+               Q ${layout.joinX} ${layout.centerY}, ${layout.joinX + layout.cornerRadius} ${layout.centerY}`,
+            ynabToJoinColor,
+          )}
+        </g>
+
+        {/* SettleUp branch */}
+        <g opacity={steps.entry === "success" ? getOpacity(steps.settleup) : 1}>
+          {/* Split to SettleUp - use SettleUp color for the corner */}
+          {createPath(
+            `M ${layout.splitX - layout.cornerRadius} ${layout.centerY}
+               Q ${layout.splitX} ${layout.centerY}, ${layout.splitX} ${layout.centerY + layout.cornerRadius}`,
+            settleupBranchColor,
+          )}
+          {createLine(
+            layout.splitX,
+            layout.centerY + layout.cornerRadius,
+            layout.splitX,
+            layout.settleupY - layout.cornerRadius,
+            settleupBranchColor,
+          )}
+          {createPath(
+            `M ${layout.splitX} ${layout.settleupY - layout.cornerRadius}
+               Q ${layout.splitX} ${layout.settleupY}, ${layout.splitX + layout.cornerRadius} ${layout.settleupY}`,
+            settleupBranchColor,
+          )}
+          {createLine(
+            layout.splitX + layout.cornerRadius,
+            layout.settleupY,
+            layout.branchX - 20,
+            layout.settleupY,
+            settleupBranchColor,
+          )}
+
+          {/* SettleUp to join - use branch-to-join color */}
+          {createLine(
+            layout.branchX + 20,
+            layout.settleupY,
+            layout.joinX - layout.cornerRadius,
+            layout.settleupY,
+            settleupToJoinColor,
+          )}
+          {createPath(
+            `M ${layout.joinX - layout.cornerRadius} ${layout.settleupY}
+               Q ${layout.joinX} ${layout.settleupY}, ${layout.joinX} ${layout.settleupY - layout.cornerRadius}`,
+            settleupToJoinColor,
+          )}
+          {createLine(
+            layout.joinX,
+            layout.settleupY - layout.cornerRadius,
+            layout.joinX,
+            layout.centerY + layout.cornerRadius,
+            settleupToJoinColor,
+          )}
+          {/* Corner from SettleUp vertical to center horizontal */}
+          {createPath(
+            `M ${layout.joinX} ${layout.centerY + layout.cornerRadius}
+               Q ${layout.joinX} ${layout.centerY}, ${layout.joinX + layout.cornerRadius} ${layout.centerY}`,
+            settleupToJoinColor,
+          )}
+        </g>
+
+        {/* Final line to complete */}
+        {createLine(
+          layout.joinX + layout.cornerRadius,
+          layout.centerY,
+          layout.completeX - 20,
+          layout.centerY,
+          joinToCompleteColor,
+        )}
+
+        {/* Step circles */}
+        <StepCircle
+          stepState={steps.entry}
+          label="Entry"
+          x={layout.entryX}
+          y={layout.centerY}
+        />
+        <StepCircle
+          stepState={steps.ynab}
+          label="YNAB"
+          x={layout.branchX}
+          y={layout.ynabY}
+        />
+        <StepCircle
+          stepState={steps.settleup}
+          label="SettleUp"
+          x={layout.branchX}
+          y={layout.settleupY}
+        />
+        <StepCircle
+          stepState={steps.complete}
+          label="Complete"
+          x={layout.completeX}
+          y={layout.centerY}
+        />
+      </svg>
 
       {/* Error Display */}
       {errorList.length > 0 && (
