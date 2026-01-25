@@ -55,3 +55,6 @@ coverage/
 
 # Auto-generated version file
 src/version.js
+
+# Planning files
+STATE_MACHINE_PLAN.md
