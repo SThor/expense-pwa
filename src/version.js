@@ -2,13 +2,13 @@
 // Do not edit manually
 
 export const VERSION_INFO = {
-  "tag": null,
-  "branch": "copilot/update-icons-to-loading-svg",
-  "commit": "293c8f3",
+  "tag": "1.2.0",
+  "branch": "87-implement-state-machine-with-stepper-visualization-for-api-call-coordination-ynab-settleup",
+  "commit": "2adcb7d",
   "isDirty": true,
-  "buildTime": "2025-10-26T11:09:42.757Z",
-  "version": "copilot/update-icons-to-loading-svg-293c8f3-dirty",
-  "shortVersion": "293c8f3"
+  "buildTime": "2026-01-25T16:23:02.939Z",
+  "version": "1.2.0",
+  "shortVersion": "1.2.0"
 };
 
 export const getVersionString = () => {
