@@ -20,6 +20,7 @@ import {
 import LoginPage from "./LoginPage.jsx";
 import MainFormPage from "./MainFormPage.jsx";
 import NotFoundPage from "./NotFoundPage.jsx";
+import StateMachineTest from "./StateMachineTest.jsx";
 import "./index.css";
 
 function RequireAuth({ children }) {
@@ -81,6 +82,7 @@ function RouterApp() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/spinner" element={<LoadingScreen />} />
+      <Route path="/state-machine" element={<StateMachineTest />} />
       <Route
         path="/"
         element={

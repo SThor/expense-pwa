@@ -20,7 +20,7 @@ import { formStatePropType } from "./propTypes.js";
 import { getClosestLocation } from "./utils/ynabUtils.js";
 import "./index.css";
 
-export default function App({ onSubmit, formState, setFormState }) {
+export default function ExpenseForm({ onSubmit, formState, setFormState }) {
   const { ynabAPI, budgetId, setAccounts } = useAppContext();
   const { token: settleUpToken, user: settleUpUser } = useAuth();
   const [payees, setPayees] = useState([]);
@@ -429,7 +429,7 @@ export default function App({ onSubmit, formState, setFormState }) {
   );
 }
 
-App.propTypes = {
+ExpenseForm.propTypes = {
   onSubmit: PropTypes.func.isRequired,
   formState: formStatePropType.isRequired,
   setFormState: PropTypes.func.isRequired,
