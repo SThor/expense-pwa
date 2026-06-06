@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import { useState } from "react";
 
-import App from "./App.jsx";
+import ExpenseForm from "./ExpenseForm.jsx";
 import { useAuth } from "./AuthProvider.jsx";
 import CenteredCardLayout from "./components/CenteredCardLayout.jsx";
 import { formStatePropType } from "./propTypes";
@@ -35,7 +35,7 @@ export default function MainFormPage({
           Logout
         </button>
       </div>
-      <App
+      <ExpenseForm
         onSubmit={() => setShowReview(true)}
         formState={formState}
         setFormState={setFormState}

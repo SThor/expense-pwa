@@ -152,7 +152,7 @@ The app is optimized for static hosting and works great with services like Nginx
 
 ```text
 src/
-├── App.jsx                 # Main application component
+├── ExpenseForm.jsx         # Main expense form component
 ├── AppContext.jsx          # Global application context
 ├── AuthProvider.jsx        # SettleUp authentication
 ├── MainFormPage.jsx        # Main form interface
