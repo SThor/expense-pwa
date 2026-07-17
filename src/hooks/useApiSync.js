@@ -249,8 +249,16 @@ export function useApiSync({ ynabAPI, budgetId, accounts, token, user }) {
       settleupPermissionsRef.current = null;
 
       const targets = formState.target;
-      setYnab(targets.ynab ? INITIAL : { status: API_STATUS.SKIPPED, error: null });
-      setSettleup(targets.settleup ? INITIAL : { status: API_STATUS.SKIPPED, error: null });
+      setYnab(
+        targets.ynab
+          ? { status: API_STATUS.ENTERING, error: null }
+          : { status: API_STATUS.SKIPPED, error: null },
+      );
+      setSettleup(
+        targets.settleup
+          ? { status: API_STATUS.FETCHING, error: null }
+          : { status: API_STATUS.SKIPPED, error: null },
+      );
 
       const [ynabResult, settleupResult] = await Promise.allSettled([
         targets.ynab ? _runYnabEnter(formState) : Promise.resolve(API_STATUS.SKIPPED),

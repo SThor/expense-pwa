@@ -91,7 +91,11 @@ function ApiChip({ name, syncState, color, onRetry }) {
       </span>
       {canRetry && (
         <button
-          onClick={onRetry}
+          type="button"
+          onClick={(event) => {
+            event.currentTarget.disabled = true;
+            onRetry();
+          }}
           title={error || undefined}
           className="underline text-xs ml-1 cursor-pointer bg-transparent border-none p-0"
           style={{ color }}
