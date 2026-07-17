@@ -20,8 +20,12 @@
     "test:run": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
+    "format:check": "prettier --check .",
+    "format:check:staged": "node scripts/check-staged-format.js",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "precommit": "npm run lint && npm run format:check:staged",
+    "prepare": "husky"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
@@ -51,6 +55,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^16.3.0",
+    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "postcss": "^8.5.6",
     "prettier": "^3.5.3",
