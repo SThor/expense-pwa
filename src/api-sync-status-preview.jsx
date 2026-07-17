@@ -25,7 +25,10 @@ const SAMPLE_STATES = [
   {
     title: "Enter error",
     ynab: { status: API_STATUS.SUCCESS, error: null },
-    settleup: { status: API_STATUS.ENTER_ERROR, error: "Temporary network issue" },
+    settleup: {
+      status: API_STATUS.ENTER_ERROR,
+      error: "Temporary network issue",
+    },
   },
   {
     title: "Fetch error",
@@ -50,7 +53,15 @@ function PreviewCard({ title, ynab, settleup }) {
         boxShadow: "0 20px 50px rgba(15,23,42,0.18)",
       }}
     >
-      <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 10 }}>
+      <div
+        style={{
+          fontSize: 12,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: "#94a3b8",
+          marginBottom: 10,
+        }}
+      >
         {title}
       </div>
       <ApiSyncStatus
@@ -90,15 +101,30 @@ function App() {
     >
       <div style={{ maxWidth: 980, margin: "0 auto" }}>
         <header style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 8 }}>
+          <div
+            style={{
+              fontSize: 12,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "#94a3b8",
+              marginBottom: 8,
+            }}
+          >
             Preview
           </div>
           <h1 style={{ fontSize: 34, lineHeight: 1.05, margin: 0 }}>
             ApiSyncStatus
           </h1>
-          <p style={{ maxWidth: 720, color: "#cbd5e1", marginTop: 12, marginBottom: 0 }}>
-            Static preview of the inline status component with the current brand colors,
-            spinner, success, and error states.
+          <p
+            style={{
+              maxWidth: 720,
+              color: "#cbd5e1",
+              marginTop: 12,
+              marginBottom: 0,
+            }}
+          >
+            Static preview of the inline status component with the current brand
+            colors, spinner, success, and error states.
           </p>
         </header>
 

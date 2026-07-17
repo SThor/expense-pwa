@@ -40,15 +40,9 @@ describe("useApiSync", () => {
   };
 
   beforeEach(() => {
-    createTransaction.mockImplementation(
-      () => new Promise(() => {}),
-    );
-    fetchSettleUpPermissions.mockImplementation(
-      () => new Promise(() => {}),
-    );
-    addSettleUpTransaction.mockImplementation(
-      () => new Promise(() => {}),
-    );
+    createTransaction.mockImplementation(() => new Promise(() => {}));
+    fetchSettleUpPermissions.mockImplementation(() => new Promise(() => {}));
+    addSettleUpTransaction.mockImplementation(() => new Promise(() => {}));
   });
 
   it("marks both APIs in-flight immediately when syncing starts", async () => {

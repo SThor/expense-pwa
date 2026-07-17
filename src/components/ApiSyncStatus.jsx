@@ -26,7 +26,14 @@ function Spinner({ color }) {
           .api-spinner { transform-origin: 7px 7px; animation: api-spin 0.8s linear infinite; }
         `}
       </style>
-      <circle cx="7" cy="7" r="5.5" stroke={color} strokeOpacity="0.25" strokeWidth="2" />
+      <circle
+        cx="7"
+        cy="7"
+        r="5.5"
+        stroke={color}
+        strokeOpacity="0.25"
+        strokeWidth="2"
+      />
       <path
         className="api-spinner"
         d="M7 1.5A5.5 5.5 0 0 1 12.5 7"

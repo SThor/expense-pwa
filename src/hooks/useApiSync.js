@@ -143,7 +143,8 @@ async function runSettleupEnter(formState, { token }) {
     formState.settleUpGroup.groupId,
     tx,
   );
-  if (!data?.name) throw new Error("Unexpected response: " + JSON.stringify(data));
+  if (!data?.name)
+    throw new Error("Unexpected response: " + JSON.stringify(data));
 }
 
 // ─── Hook ──────────────────────────────────────────────────────────────────────
@@ -193,7 +194,10 @@ export function useApiSync({ ynabAPI, budgetId, accounts, token, user }) {
       setSettleup({ status: API_STATUS.FETCHING, error: null });
       let permissions;
       try {
-        permissions = await fetchAndValidateSettleup(formState, { token, user });
+        permissions = await fetchAndValidateSettleup(formState, {
+          token,
+          user,
+        });
         settleupPermissionsRef.current = permissions;
         setSettleup({ status: API_STATUS.READY, error: null });
       } catch (err) {
@@ -261,7 +265,9 @@ export function useApiSync({ ynabAPI, budgetId, accounts, token, user }) {
       );
 
       const [ynabResult, settleupResult] = await Promise.allSettled([
-        targets.ynab ? _runYnabEnter(formState) : Promise.resolve(API_STATUS.SKIPPED),
+        targets.ynab
+          ? _runYnabEnter(formState)
+          : Promise.resolve(API_STATUS.SKIPPED),
         targets.settleup
           ? _runSettleupFetchThenEnter(formState)
           : Promise.resolve(API_STATUS.SKIPPED),
