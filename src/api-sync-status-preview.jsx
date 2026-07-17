@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 
@@ -61,6 +62,18 @@ function PreviewCard({ title, ynab, settleup }) {
     </section>
   );
 }
+
+PreviewCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  ynab: PropTypes.shape({
+    status: PropTypes.string.isRequired,
+    error: PropTypes.string,
+  }).isRequired,
+  settleup: PropTypes.shape({
+    status: PropTypes.string.isRequired,
+    error: PropTypes.string,
+  }).isRequired,
+};
 
 function App() {
   return (
